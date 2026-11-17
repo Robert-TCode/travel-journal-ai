@@ -12,8 +12,9 @@ build/
 .swiftpm/
 Package.resolved.orig
 
-# Private working notes for Claude — never commit
+# Private notes — never commit
 CLAUDE.md
+NOTES.md
 .claude/
 
 # Secrets — never commit keys or tokens

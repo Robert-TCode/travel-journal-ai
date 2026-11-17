@@ -2,7 +2,7 @@
 
 A travel journal for iOS that figures out *where, when and what* from photos, text and voice notes — on device by default, with cloud models only for long-form trip stories.
 
-> Learning project. Work in progress. See [NOTES.md](NOTES.md) for the learning journal.
+> Learning project. Work in progress.
 
 ## Status
 
