@@ -1,0 +1,29 @@
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved.orig
+
+# Private working notes for Claude — never commit
+CLAUDE.md
+.claude/
+
+# Secrets — never commit keys or tokens
+*.xcconfig.local
+Secrets.xcconfig
+.env
+.env.*
+
+# Eval data: personal photos stay local
+Evaluation/Photos/
+
+# macOS
+.DS_Store
