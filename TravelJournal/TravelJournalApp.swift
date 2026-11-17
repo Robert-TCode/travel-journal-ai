@@ -8,7 +8,7 @@ import Presentation
 struct TravelJournalApp: App {
     var body: some Scene {
         WindowGroup {
-            Text("Travel Journal")
+            RootView()
         }
     }
 }
