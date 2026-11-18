@@ -6,9 +6,11 @@ import Presentation
 // Composition root: the only place that wires DataLayer implementations into Domain protocols.
 @main
 struct TravelJournalApp: App {
+    private let availabilityService = SystemModelAvailabilityService()
+
     var body: some Scene {
         WindowGroup {
-            RootView()
+            RootView(availabilityService: availabilityService)
         }
     }
 }

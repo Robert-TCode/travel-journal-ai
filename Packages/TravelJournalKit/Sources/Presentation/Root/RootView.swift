@@ -1,7 +1,12 @@
 import SwiftUI
+import Domain
 
 public struct RootView: View {
-    public init() {}
+    private let availabilityService: any AIModelAvailabilityService
+
+    public init(availabilityService: any AIModelAvailabilityService) {
+        self.availabilityService = availabilityService
+    }
 
     public var body: some View {
         TabView {
@@ -9,12 +14,14 @@ public struct RootView: View {
                 TripsView()
             }
             Tab("Capture", systemImage: "plus.circle") {
-                CaptureView()
+                CaptureView(availabilityService: availabilityService)
             }
         }
     }
 }
 
+#if DEBUG
 #Preview {
-    RootView()
+    RootView(availabilityService: PreviewAvailabilityService(.available))
 }
+#endif
