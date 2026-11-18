@@ -20,8 +20,6 @@ public struct RootView: View {
     }
 }
 
-#if DEBUG
 #Preview {
     RootView(availabilityService: PreviewAvailabilityService(.available))
 }
-#endif

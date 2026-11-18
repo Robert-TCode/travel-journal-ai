@@ -51,7 +51,6 @@ struct CaptureView: View {
     }
 }
 
-#if DEBUG
 #Preview("Available") {
     CaptureView(availabilityService: PreviewAvailabilityService(.available))
 }
@@ -67,4 +66,3 @@ struct CaptureView: View {
 #Preview("Not supported") {
     CaptureView(availabilityService: PreviewAvailabilityService(.unavailable(reason: .notSupported)))
 }
-#endif
