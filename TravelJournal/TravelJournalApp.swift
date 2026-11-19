@@ -8,10 +8,12 @@ import Presentation
 struct TravelJournalApp: App {
     private let availabilityService = SystemModelAvailabilityService()
     private let repository = InMemoryEntryRepository()
+    // Placeholder until start / end trip exists: every entry goes to this trip for now.
+    private let currentTripID = UUID()
 
     var body: some Scene {
         WindowGroup {
-            RootView(availabilityService: availabilityService, repository: repository)
+            RootView(availabilityService: availabilityService, repository: repository, currentTripID: currentTripID)
         }
     }
 }

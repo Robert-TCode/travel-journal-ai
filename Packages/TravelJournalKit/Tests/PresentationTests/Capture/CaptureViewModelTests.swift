@@ -1,4 +1,5 @@
 import Domain
+import Foundation
 import Observation
 import Testing
 @testable import Presentation
@@ -60,6 +61,18 @@ struct CaptureViewModelSaveTests {
 
         #expect(repository.savedEntries.map(\.text) == ["Walked 20k steps, my feet hurt."])
         #expect(repository.savedEntries.first?.indexingStatus == .pending)
+        #expect(repository.savedEntries.first?.tags == [])
+    }
+
+    @Test func savesTheEntryIntoTheCurrentTrip() async {
+        let tripID = UUID()
+        let repository = MockEntryRepository()
+        let sut = makeSUT(repository: repository, tripID: tripID)
+        sut.noteText = "Black ice cream at Owakudani."
+
+        await sut.save()
+
+        #expect(repository.savedEntries.first?.tripID == tripID)
     }
 
     @Test func clearsTheNoteAndConfirmsAfterSaving() async {
@@ -100,9 +113,10 @@ struct CaptureViewModelSaveTests {
 @MainActor
 private func makeSUT(
     availabilityService: any AIModelAvailabilityService = MockAvailabilityService(),
-    repository: any EntryRepository = MockEntryRepository()
+    repository: any EntryRepository = MockEntryRepository(),
+    tripID: UUID = UUID()
 ) -> CaptureViewModel {
-    CaptureViewModel(availabilityService: availabilityService, repository: repository)
+    CaptureViewModel(availabilityService: availabilityService, repository: repository, tripID: tripID)
 }
 
 /// Waits for the view model's `availability` to change instead of sleeping.

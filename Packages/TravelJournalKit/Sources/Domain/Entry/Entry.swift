@@ -3,19 +3,41 @@ import Foundation
 /// A memory as the user captured it. `text` is stored verbatim; the model only ever adds metadata next to it.
 public struct Entry: Sendable, Equatable, Identifiable {
     public let id: UUID
+    public let tripID: UUID
     public var text: String
     public let createdAt: Date
+
+    // Deterministic metadata, captured by code on a best-effort basis (nil when unavailable).
+    public var coordinate: Coordinate?
+    public var placeName: String?
+    public var weather: WeatherCondition?
+    public var isDaytime: Bool?
+
+    // Added by AI indexing after save (mood included, from a fixed vocabulary). Editable by the user.
+    public var tags: [String]
     public var indexingStatus: IndexingStatus
 
     public init(
         id: UUID = UUID(),
+        tripID: UUID,
         text: String,
         createdAt: Date = .now,
+        coordinate: Coordinate? = nil,
+        placeName: String? = nil,
+        weather: WeatherCondition? = nil,
+        isDaytime: Bool? = nil,
+        tags: [String] = [],
         indexingStatus: IndexingStatus = .pending
     ) {
         self.id = id
+        self.tripID = tripID
         self.text = text
         self.createdAt = createdAt
+        self.coordinate = coordinate
+        self.placeName = placeName
+        self.weather = weather
+        self.isDaytime = isDaytime
+        self.tags = tags
         self.indexingStatus = indexingStatus
     }
 

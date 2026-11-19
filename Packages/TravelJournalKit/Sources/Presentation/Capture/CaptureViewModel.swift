@@ -1,10 +1,12 @@
 import Domain
+import Foundation
 import Observation
 
 @MainActor @Observable
 final class CaptureViewModel {
     private let availabilityService: any AIModelAvailabilityService
     private let repository: any EntryRepository
+    private let tripID: UUID
 
     private(set) var availability: AIModelAvailability?
 
@@ -13,9 +15,10 @@ final class CaptureViewModel {
     private(set) var didSave = false
     private(set) var saveFailed = false
 
-    init(availabilityService: any AIModelAvailabilityService, repository: any EntryRepository) {
+    init(availabilityService: any AIModelAvailabilityService, repository: any EntryRepository, tripID: UUID) {
         self.availabilityService = availabilityService
         self.repository = repository
+        self.tripID = tripID
     }
 
     var canSave: Bool {
@@ -38,7 +41,7 @@ final class CaptureViewModel {
         defer { isSaving = false }
 
         do {
-            try await repository.save(Entry(text: noteText))
+            try await repository.save(Entry(tripID: tripID, text: noteText))
             noteText = ""
             didSave = true
         } catch {
