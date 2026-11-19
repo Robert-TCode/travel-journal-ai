@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         // Pure Swift. No Apple frameworks beyond Foundation (no FoundationModels, PhotoKit, MapKit...).
         .target(name: "Domain"),
-        // Repositories and data sources: Photos, MapKit, Contacts, Spotlight, language models.
+        // Repositories and data sources: persistence, location, weather, Spotlight, language models.
         .target(name: "DataLayer", dependencies: ["Domain"]),
         // SwiftUI views and view models. Knows Domain only.
         .target(name: "Presentation", dependencies: ["Domain"]),

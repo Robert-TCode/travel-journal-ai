@@ -1,18 +1,24 @@
 # Travel Journal AI
 
-A travel journal for iOS that figures out *where, when and what* from photos, text and voice notes — on device by default, with cloud models only for long-form trip stories.
+A travel journal for iOS. You capture memories in a second: a note, a photo, a voice message. The app quietly understands them on device (place, weather, tags, mood) so you can find them later by asking in plain words, like *"the black ice cream"* or *"best views from my Norway trip"*.
 
 > Learning project. Work in progress.
 
+## How it uses AI
+
+- **Capture is instant and silent.** Saving never waits for or depends on a model.
+- **Silent indexing, on device.** After saving, the on-device model adds tags and a mood; code adds place, date, weather and trip.
+- **AI answers only when you ask:** search across memories (on device), or ask about a single memory, where world knowledge may need a cloud model. The UI says when data leaves the phone.
+
 ## Status
 
-- [ ] Week 1 — Basics & photos
-- [ ] Week 2 — Structured entries & tools
-- [ ] Week 3 — Image understanding & grounding
-- [ ] Week 4 — Audio & streaming UI
-- [ ] Week 5 — Private search (local RAG)
-- [ ] Week 6 — Cloud models & trip story
-- [ ] Week 7 — Agentic mode & evaluations
+- [ ] Week 1 — Foundations: availability, save without AI
+- [ ] Week 2 — Silent indexing of text entries
+- [ ] Week 3 — Photos, video and tools
+- [ ] Week 4 — Voice and trip screens
+- [ ] Week 5 — Search across memories (local RAG)
+- [ ] Week 6 — Ask about a memory, trip highlights (cloud)
+- [ ] Week 7 — Evaluations
 - [ ] Week 8 — Write-up
 
 ## Requirements
@@ -25,8 +31,8 @@ A travel journal for iOS that figures out *where, when and what* from photos, te
 ```
 TravelJournal/                 App target — composition root only
 Packages/TravelJournalKit/
-  Sources/Domain/              Entities, use cases, protocols (no Apple data frameworks)
-  Sources/DataLayer/           Photos, MapKit, Contacts, Spotlight, language models
+  Sources/Domain/              Entities and protocols (no Apple data frameworks)
+  Sources/DataLayer/           Persistence, location, weather, Spotlight, language models
   Sources/Presentation/        SwiftUI views and view models
   Tests/                       Swift Testing suites per layer
 ```
@@ -41,7 +47,7 @@ xcodebuild test -project TravelJournal.xcodeproj -scheme TravelJournal -destinat
 
 ## Privacy
 
-Extraction and search run on device. Only trip-story generation may use cloud models, and the UI says so. No API keys ship in the binary.
+Indexing and search run on device. Data leaves the phone only when you explicitly ask a question that needs a cloud model, and the UI says so. No API keys ship in the binary.
 
 ## Measurements
 
