@@ -7,10 +7,11 @@ import Presentation
 @main
 struct TravelJournalApp: App {
     private let availabilityService = SystemModelAvailabilityService()
+    private let repository = InMemoryEntryRepository()
 
     var body: some Scene {
         WindowGroup {
-            RootView(availabilityService: availabilityService)
+            RootView(availabilityService: availabilityService, repository: repository)
         }
     }
 }

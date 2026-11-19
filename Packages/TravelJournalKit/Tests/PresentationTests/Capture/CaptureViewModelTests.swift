@@ -5,9 +5,9 @@ import Testing
 
 @MainActor
 @Suite("CaptureViewModel availability")
-struct CaptureViewModelTests {
+struct CaptureViewModelAvailabilityTests {
     @Test func startsWithUnknownAvailability() {
-        let sut = CaptureViewModel(availabilityService: MockAvailabilityService())
+        let sut = makeSUT(availabilityService: MockAvailabilityService())
 
         #expect(sut.availability == nil)
     }
@@ -15,7 +15,7 @@ struct CaptureViewModelTests {
     @Test(.timeLimit(.minutes(1)))
     func followsAvailabilityChanges() async {
         let service = MockAvailabilityService()
-        let sut = CaptureViewModel(availabilityService: service)
+        let sut = makeSUT(availabilityService: service)
         var changes = AvailabilityChanges(of: sut)
         #expect(await changes.next() == nil)
 
@@ -32,7 +32,7 @@ struct CaptureViewModelTests {
     @Test(.timeLimit(.minutes(1)))
     func stopsListeningWhenObservationIsCancelled() async {
         let service = MockAvailabilityService()
-        let sut = CaptureViewModel(availabilityService: service)
+        let sut = makeSUT(availabilityService: service)
         var changes = AvailabilityChanges(of: sut)
         _ = await changes.next()
 
@@ -46,6 +46,63 @@ struct CaptureViewModelTests {
 
         #expect(service.isTerminated)
     }
+}
+
+@MainActor
+@Suite("CaptureViewModel save")
+struct CaptureViewModelSaveTests {
+    @Test func savesTheNoteVerbatimAsAPendingEntry() async {
+        let repository = MockEntryRepository()
+        let sut = makeSUT(repository: repository)
+        sut.noteText = "Walked 20k steps, my feet hurt."
+
+        await sut.save()
+
+        #expect(repository.savedEntries.map(\.text) == ["Walked 20k steps, my feet hurt."])
+        #expect(repository.savedEntries.first?.indexingStatus == .pending)
+    }
+
+    @Test func clearsTheNoteAndConfirmsAfterSaving() async {
+        let sut = makeSUT()
+        sut.noteText = "Black ice cream at Owakudani."
+
+        await sut.save()
+
+        #expect(sut.noteText.isEmpty)
+        #expect(sut.didSave)
+        #expect(!sut.isSaving)
+    }
+
+    @Test func keepsTheNoteWhenSavingFails() async {
+        let sut = makeSUT(repository: MockEntryRepository(failing: true))
+        sut.noteText = "Don't lose me."
+
+        await sut.save()
+
+        #expect(sut.noteText == "Don't lose me.")
+        #expect(sut.saveFailed)
+        #expect(!sut.didSave)
+    }
+
+    @Test(arguments: ["", "   ", "\n\t"])
+    func doesNotSaveBlankNotes(_ text: String) async {
+        let repository = MockEntryRepository()
+        let sut = makeSUT(repository: repository)
+        sut.noteText = text
+
+        await sut.save()
+
+        #expect(!sut.canSave)
+        #expect(repository.savedEntries.isEmpty)
+    }
+}
+
+@MainActor
+private func makeSUT(
+    availabilityService: any AIModelAvailabilityService = MockAvailabilityService(),
+    repository: any EntryRepository = MockEntryRepository()
+) -> CaptureViewModel {
+    CaptureViewModel(availabilityService: availabilityService, repository: repository)
 }
 
 /// Waits for the view model's `availability` to change instead of sleeping.

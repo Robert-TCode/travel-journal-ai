@@ -3,66 +3,110 @@ import Domain
 
 struct CaptureView: View {
     @State private var viewModel: CaptureViewModel
+    @FocusState private var isEditingNote: Bool
 
-    init(availabilityService: any AIModelAvailabilityService) {
-        _viewModel = State(initialValue: CaptureViewModel(availabilityService: availabilityService))
+    init(availabilityService: any AIModelAvailabilityService, repository: any EntryRepository) {
+        _viewModel = State(initialValue: CaptureViewModel(
+            availabilityService: availabilityService,
+            repository: repository
+        ))
     }
 
     var body: some View {
         NavigationStack {
-            content
+            noteForm
                 .navigationTitle("Capture")
         }
         .task { await viewModel.observeAvailability() }
     }
 
-    @ViewBuilder
-    private var content: some View {
-        switch viewModel.availability {
-        case nil:
-            ProgressView()
-        case .available:
-            ContentUnavailableView(
-                "Nothing to capture yet",
-                systemImage: "plus.circle",
-                description: Text("Photos, voice notes and text will go here.")
-            )
-        case .unavailable(let reason):
-            unavailableView(for: reason)
+    /// Saving never depends on Apple Intelligence; availability only decides whether smart tags will follow.
+    private var noteForm: some View {
+        Form {
+            if case .unavailable(let reason) = viewModel.availability {
+                Section {
+                    unavailableView(for: reason)
+                }
+            }
+
+            Section("Note") {
+                TextEditor(text: $viewModel.noteText)
+                    .frame(minHeight: 120)
+                    .focused($isEditingNote)
+            }
+
+            Section {
+                Button {
+                    // A focused TextEditor can write its text back after we clear it; end editing first.
+                    isEditingNote = false
+                    Task { await viewModel.save() }
+                } label: {
+                    if viewModel.isSaving {
+                        ProgressView()
+                    } else {
+                        Text("Save")
+                    }
+                }
+                .disabled(!viewModel.canSave)
+            } footer: {
+                if viewModel.didSave {
+                    Label("Saved", systemImage: "checkmark.circle")
+                } else if viewModel.saveFailed {
+                    Label("Couldn't save. Try again.", systemImage: "exclamationmark.triangle")
+                }
+            }
         }
     }
 
     private func unavailableView(for reason: AIModelAvailability.UnavailabilityReason) -> some View {
         let (title, systemImage, message) = switch reason {
         case .notEnabled:
-            ("Turn on Apple Intelligence", "apple.intelligence",
-             "Capture runs on your iPhone with Apple Intelligence. Turn it on in Settings > Apple Intelligence & Siri.")
+            ("Smart tags are off", "apple.intelligence",
+             "Your notes are saved. Turn on Apple Intelligence in Settings > Apple Intelligence & Siri to tag them automatically.")
         case .notReadyYet:
-            ("Getting ready", "arrow.down.circle",
-             "Apple Intelligence is still downloading. This screen updates by itself when it's ready.")
+            ("Smart tags are getting ready", "arrow.down.circle",
+             "Your notes are saved. Apple Intelligence is still downloading; tags will follow once it's ready.")
         case .notSupported:
-            ("Not available on this iPhone", "iphone.slash",
-             "Capture needs an iPhone that supports Apple Intelligence.")
+            ("Smart tags aren't available", "iphone.slash",
+             "Your notes are saved. This iPhone doesn't support Apple Intelligence, so notes won't be tagged automatically.")
         case .unknown:
-            ("Apple Intelligence isn't available", "exclamationmark.triangle",
-             "Try again in a moment.")
+            ("Smart tags are unavailable", "exclamationmark.triangle",
+             "Your notes are saved. Tags will follow when Apple Intelligence is available again.")
         }
-        return ContentUnavailableView(title, systemImage: systemImage, description: Text(message))
+        return VStack(alignment: .leading, spacing: 4) {
+            Label(title, systemImage: systemImage)
+                .font(.headline)
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
     }
 }
 
 #Preview("Available") {
-    CaptureView(availabilityService: PreviewAvailabilityService(.available))
+    CaptureView(
+        availabilityService: PreviewAvailabilityService(.available),
+        repository: PreviewEntryRepository()
+    )
 }
 
 #Preview("Not enabled") {
-    CaptureView(availabilityService: PreviewAvailabilityService(.unavailable(reason: .notEnabled)))
+    CaptureView(
+        availabilityService: PreviewAvailabilityService(.unavailable(reason: .notEnabled)),
+        repository: PreviewEntryRepository()
+    )
 }
 
 #Preview("Getting ready") {
-    CaptureView(availabilityService: PreviewAvailabilityService(.unavailable(reason: .notReadyYet)))
+    CaptureView(
+        availabilityService: PreviewAvailabilityService(.unavailable(reason: .notReadyYet)),
+        repository: PreviewEntryRepository()
+    )
 }
 
 #Preview("Not supported") {
-    CaptureView(availabilityService: PreviewAvailabilityService(.unavailable(reason: .notSupported)))
+    CaptureView(
+        availabilityService: PreviewAvailabilityService(.unavailable(reason: .notSupported)),
+        repository: PreviewEntryRepository()
+    )
 }
