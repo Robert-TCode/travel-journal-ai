@@ -63,16 +63,16 @@ struct CaptureView: View {
         let (title, systemImage, message) = switch reason {
         case .notEnabled:
             ("Smart tags are off", "apple.intelligence",
-             "Your notes are saved. Turn on Apple Intelligence in Settings > Apple Intelligence & Siri to tag them automatically.")
+             "Notes still save. Turn on Apple Intelligence in Settings > Apple Intelligence & Siri to tag them automatically.")
         case .notReadyYet:
             ("Smart tags are getting ready", "arrow.down.circle",
-             "Your notes are saved. Apple Intelligence is still downloading; tags will follow once it's ready.")
+             "Notes still save. Apple Intelligence is still downloading; tags will follow once it's ready.")
         case .notSupported:
             ("Smart tags aren't available", "iphone.slash",
-             "Your notes are saved. This iPhone doesn't support Apple Intelligence, so notes won't be tagged automatically.")
+             "Notes still save. This iPhone doesn't support Apple Intelligence, so notes won't be tagged automatically.")
         case .unknown:
             ("Smart tags are unavailable", "exclamationmark.triangle",
-             "Your notes are saved. Tags will follow when Apple Intelligence is available again.")
+             "Notes still save. Tags will follow when Apple Intelligence is available again.")
         }
         return VStack(alignment: .leading, spacing: 4) {
             Label(title, systemImage: systemImage)

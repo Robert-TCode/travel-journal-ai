@@ -86,6 +86,16 @@ struct CaptureViewModelSaveTests {
         #expect(!sut.isSaving)
     }
 
+    @Test func hidesTheConfirmationWhenANewNoteStarts() async {
+        let sut = makeSUT()
+        sut.noteText = "First note"
+        await sut.save()
+
+        sut.noteText = "S"
+
+        #expect(!sut.didSave)
+    }
+
     @Test func keepsTheNoteWhenSavingFails() async {
         let sut = makeSUT(repository: MockEntryRepository(failing: true))
         sut.noteText = "Don't lose me."

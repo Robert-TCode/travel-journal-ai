@@ -10,7 +10,12 @@ final class CaptureViewModel {
 
     private(set) var availability: AIModelAvailability?
 
-    var noteText = ""
+    var noteText = "" {
+        didSet {
+            // A new note starts: the confirmation belongs to the previous one.
+            if !noteText.isEmpty { didSave = false }
+        }
+    }
     private(set) var isSaving = false
     private(set) var didSave = false
     private(set) var saveFailed = false
