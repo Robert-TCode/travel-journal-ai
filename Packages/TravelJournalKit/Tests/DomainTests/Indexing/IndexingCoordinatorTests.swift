@@ -85,4 +85,24 @@ struct IndexingCoordinatorTests {
         #expect(repository.entries.first?.placeName == nil)
         #expect(repository.entries.first?.indexingStatus == .done)
     }
+
+    @Test(.timeLimit(.minutes(1)))
+    func resumesPendingEntriesOldestFirstWithoutRefetchingContext() async throws {
+        let repository = SpyEntryRepository()
+        let older = Entry(tripID: UUID(), text: "older", createdAt: Date(timeIntervalSince1970: 100), placeName: "Bergen")
+        let newer = Entry(tripID: UUID(), text: "newer", createdAt: Date(timeIntervalSince1970: 200))
+        let done = Entry(tripID: UUID(), text: "done", tags: ["x"], indexingStatus: .done)
+        for entry in [newer, done, older] { try await repository.save(entry) }
+        let contextProvider = StubContextProvider(context: EntryContext(placeName: "Today's place"))
+        let indexer = MockEntryIndexer(returning: .success(EntryIndex(tags: ["t"], mood: nil)))
+        let sut = IndexingCoordinator(contextProvider: contextProvider, indexer: indexer, repository: repository)
+
+        await sut.resumePendingEntries()
+        await sut.waitUntilIdle()
+
+        #expect(indexer.indexedTexts == ["older", "newer"])
+        #expect(contextProvider.callCount == 0)
+        #expect(repository.entries.first { $0.id == older.id }?.placeName == "Bergen")
+        #expect(repository.entries.allSatisfy { $0.indexingStatus == .done })
+    }
 }

@@ -23,6 +23,8 @@ final class MockEntryRepository: EntryRepository {
         stream
     }
 
+    func pendingEntries() -> [Entry] { [] }
+
     var savedEntries: [Entry] { saved.withLock { $0 } }
 
     func save(_ entry: Entry) async throws {

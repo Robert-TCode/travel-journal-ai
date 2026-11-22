@@ -41,7 +41,7 @@ public struct Entry: Sendable, Equatable, Identifiable {
     }
 
     /// Where the silent, after-save indexing stands. Persisted, so pending work survives an app restart.
-    public enum IndexingStatus: Sendable, Equatable {
+    public enum IndexingStatus: String, Sendable, Equatable {
         case pending
         case done
         case failed

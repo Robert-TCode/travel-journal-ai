@@ -47,12 +47,24 @@ final class SpyEntryRepository: EntryRepository {
     func entryUpdates(tripID: UUID) -> AsyncStream<[Entry]> {
         AsyncStream { $0.finish() }
     }
+
+    func pendingEntries() -> [Entry] {
+        entries.filter { $0.indexingStatus == .pending }.sorted { $0.createdAt < $1.createdAt }
+    }
 }
 
-struct StubContextProvider: EntryContextProvider {
-    var context: EntryContext = .empty
+final class StubContextProvider: EntryContextProvider {
+    private let context: EntryContext
+    private let calls = Mutex(0)
+
+    init(context: EntryContext = .empty) {
+        self.context = context
+    }
+
+    var callCount: Int { calls.withLock { $0 } }
 
     func currentContext() async -> EntryContext {
-        context
+        calls.withLock { $0 += 1 }
+        return context
     }
 }

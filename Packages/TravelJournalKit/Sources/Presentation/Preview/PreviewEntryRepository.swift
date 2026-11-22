@@ -15,4 +15,6 @@ struct PreviewEntryRepository: EntryRepository {
             continuation.finish()
         }
     }
+
+    func pendingEntries() -> [Entry] { [] }
 }

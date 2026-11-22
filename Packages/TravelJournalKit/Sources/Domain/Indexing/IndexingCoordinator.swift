@@ -21,7 +21,20 @@ public actor IndexingCoordinator: IndexingQueue {
     }
 
     public func enqueue(_ entry: Entry) {
-        queue.append(Task { await addContext(to: entry) })
+        append(Task { await addContext(to: entry) })
+    }
+
+    /// Indexes entries left pending by a previous run. Their context is not refetched:
+    /// the moment they were captured has passed, and today's location or weather would be wrong.
+    public func resumePendingEntries() async {
+        let pending = (try? await repository.pendingEntries()) ?? []
+        for entry in pending {
+            append(Task { entry })
+        }
+    }
+
+    private func append(_ entry: Task<Entry, Never>) {
+        queue.append(entry)
         if drainTask == nil {
             drainTask = Task { await drain() }
         }
