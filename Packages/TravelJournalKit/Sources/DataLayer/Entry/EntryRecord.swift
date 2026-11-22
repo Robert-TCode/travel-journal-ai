@@ -9,6 +9,8 @@ final class EntryRecord {
     var tripID: UUID
     var text: String
     var photoNames: [String] = []
+    var audioName: String?
+    var transcript: String?
     var createdAt: Date
     var latitude: Double?
     var longitude: Double?
@@ -31,6 +33,8 @@ final class EntryRecord {
     func update(from entry: Entry) {
         text = entry.text
         photoNames = entry.photoNames
+        audioName = entry.audioName
+        transcript = entry.transcript
         latitude = entry.coordinate?.latitude
         longitude = entry.coordinate?.longitude
         placeName = entry.placeName
@@ -46,6 +50,8 @@ final class EntryRecord {
             tripID: tripID,
             text: text,
             photoNames: photoNames,
+            audioName: audioName,
+            transcript: transcript,
             createdAt: createdAt,
             coordinate: latitude.flatMap { latitude in
                 longitude.map { Coordinate(latitude: latitude, longitude: $0) }

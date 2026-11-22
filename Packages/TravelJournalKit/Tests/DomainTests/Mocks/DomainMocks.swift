@@ -72,3 +72,11 @@ final class StubContextProvider: EntryContextProvider {
         return context
     }
 }
+
+struct StubTranscriber: Transcriber {
+    var result: Result<String, MockIndexerError> = .success("")
+
+    func transcribe(audioNamed name: String) async throws -> String {
+        try result.get()
+    }
+}

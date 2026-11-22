@@ -41,6 +41,8 @@ struct SwiftDataEntryRepositoryTests {
             tripID: tripID,
             text: "Black ice cream",
             photoNames: ["a.heic", "b.jpg"],
+            audioName: "note.m4a",
+            transcript: "Black ice cream at Owakudani",
             coordinate: Coordinate(latitude: 35.24, longitude: 139.02),
             placeName: "Hakone, Kanagawa",
             weather: .clear,

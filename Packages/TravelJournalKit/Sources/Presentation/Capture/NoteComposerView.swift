@@ -6,6 +6,7 @@ struct NoteComposerView: View {
     @Bindable var viewModel: CaptureViewModel
     let trip: Trip
     @FocusState private var isEditingNote: Bool
+    @State private var isRecordingVoice = false
 
     var body: some View {
         Form {
@@ -24,9 +25,10 @@ struct NoteComposerView: View {
                 if !viewModel.pendingPhotos.isEmpty {
                     PendingPhotosStrip(photos: viewModel.pendingPhotos, onRemove: viewModel.removePhoto)
                 }
-                AddPhotoButtons { data in
-                    await viewModel.addPhoto(data)
-                }
+                CaptureActionButtons(
+                    onPhoto: { data in await viewModel.addPhoto(data) },
+                    onVoice: { isRecordingVoice = true }
+                )
             } header: {
                 Text("\(trip.name) · day \(viewModel.dayNumber(of: trip))")
                     .font(.subheadline.weight(.semibold))
@@ -51,6 +53,10 @@ struct NoteComposerView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $isRecordingVoice) {
+            VoiceRecorderView(viewModel: viewModel)
+                .presentationDetents([.medium])
         }
     }
 

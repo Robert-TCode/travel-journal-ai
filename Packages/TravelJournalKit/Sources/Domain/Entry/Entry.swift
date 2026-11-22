@@ -7,6 +7,10 @@ public struct Entry: Sendable, Equatable, Identifiable {
     public var text: String
     /// File names in the `MediaStore`, in the order the user added them.
     public var photoNames: [String]
+    /// A voice note's audio file in the `MediaStore`; the recording itself is the memory.
+    public var audioName: String?
+    /// Written on device after saving, for indexing and search. Nil until transcription finishes.
+    public var transcript: String?
     public let createdAt: Date
 
     public var coordinate: Coordinate?
@@ -23,6 +27,8 @@ public struct Entry: Sendable, Equatable, Identifiable {
         tripID: UUID,
         text: String,
         photoNames: [String] = [],
+        audioName: String? = nil,
+        transcript: String? = nil,
         createdAt: Date = .now,
         coordinate: Coordinate? = nil,
         placeName: String? = nil,
@@ -35,6 +41,8 @@ public struct Entry: Sendable, Equatable, Identifiable {
         self.tripID = tripID
         self.text = text
         self.photoNames = photoNames
+        self.audioName = audioName
+        self.transcript = transcript
         self.createdAt = createdAt
         self.coordinate = coordinate
         self.placeName = placeName

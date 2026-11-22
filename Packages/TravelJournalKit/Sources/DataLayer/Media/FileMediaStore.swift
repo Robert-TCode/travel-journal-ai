@@ -5,9 +5,25 @@ import UniformTypeIdentifiers
 
 public struct FileMediaStore: MediaStore {
     private let directory: URL
+    private let audioDirectory: URL
 
-    public init(directory: URL = URL.applicationSupportDirectory.appending(path: "Photos", directoryHint: .isDirectory)) {
+    public init(
+        directory: URL = URL.applicationSupportDirectory.appending(path: "Photos", directoryHint: .isDirectory),
+        audioDirectory: URL = URL.applicationSupportDirectory.appending(path: "Audio", directoryHint: .isDirectory)
+    ) {
         self.directory = directory
+        self.audioDirectory = audioDirectory
+    }
+
+    public func storeAudio(movingFrom url: URL) async throws -> String {
+        try FileManager.default.createDirectory(at: audioDirectory, withIntermediateDirectories: true)
+        let name = "\(UUID().uuidString).\(url.pathExtension.isEmpty ? "m4a" : url.pathExtension)"
+        try FileManager.default.moveItem(at: url, to: audioURL(named: name))
+        return name
+    }
+
+    public func audioURL(named name: String) -> URL {
+        audioDirectory.appending(path: name, directoryHint: .notDirectory)
     }
 
     public func storePhoto(_ data: Data) async throws -> String {

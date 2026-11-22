@@ -280,6 +280,69 @@ struct CaptureViewModelPhotoTests {
 }
 
 @MainActor
+@Suite("CaptureViewModel voice notes")
+struct CaptureViewModelVoiceTests {
+    @Test(.timeLimit(.minutes(1)))
+    func aVoiceNoteIsSavedAsItsOwnEntryAndIndexed() async {
+        let repository = MockEntryRepository()
+        let queue = MockIndexingQueue()
+        let (sut, trip, observing) = await makeSUTWithOngoingTrip(entries: repository, indexingQueue: queue)
+        defer { observing.cancel() }
+        sut.noteText = "A draft that stays in the editor"
+
+        await sut.startRecording()
+        #expect(sut.recordingStartedAt != nil)
+        await sut.finishRecording()
+
+        let saved = repository.savedEntries.first
+        #expect(saved?.audioName == "voice.m4a")
+        #expect(saved?.text == "")
+        #expect(saved?.tripID == trip.id)
+        #expect(saved?.transcript == nil)
+        #expect(queue.enqueuedEntries.map(\.id) == [saved?.id])
+        #expect(sut.noteText == "A draft that stays in the editor")
+        #expect(sut.recordingStartedAt == nil)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func anEmptyRecordingSavesNothing() async {
+        let repository = MockEntryRepository()
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(entries: repository, recorder: MockVoiceRecorder(recording: nil))
+        defer { observing.cancel() }
+
+        await sut.startRecording()
+        await sut.finishRecording()
+
+        #expect(repository.savedEntries.isEmpty)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func cancellingDiscardsTheRecording() async {
+        let recorder = MockVoiceRecorder()
+        let repository = MockEntryRepository()
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(entries: repository, recorder: recorder)
+        defer { observing.cancel() }
+
+        await sut.startRecording()
+        await sut.cancelRecording()
+
+        #expect(recorder.wasCancelled)
+        #expect(repository.savedEntries.isEmpty)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func explainsWhenTheMicrophoneIsOff() async {
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(recorder: MockVoiceRecorder(startError: .microphoneAccessDenied))
+        defer { observing.cancel() }
+
+        await sut.startRecording()
+
+        #expect(sut.microphoneDenied)
+        #expect(sut.recordingStartedAt == nil)
+    }
+}
+
+@MainActor
 @Suite("CaptureViewModel recent entries")
 struct CaptureViewModelRecentEntriesTests {
     @Test(.timeLimit(.minutes(1)))
@@ -309,7 +372,8 @@ private func makeSUT(
     trips: FakeTripRepository = FakeTripRepository(),
     indexingQueue: any IndexingQueue = MockIndexingQueue(),
     context: any EntryContextProvider = StubContextProvider(),
-    media: any MediaStore = MockMediaStore()
+    media: any MediaStore = MockMediaStore(),
+    recorder: any VoiceRecorder = MockVoiceRecorder()
 ) -> CaptureViewModel {
     CaptureViewModel(dependencies: AppDependencies(
         availability: availability,
@@ -318,7 +382,8 @@ private func makeSUT(
         tripLifecycle: TripLifecycle(repository: trips),
         indexingQueue: indexingQueue,
         context: context,
-        media: media
+        media: media,
+        recorder: recorder
     ))
 }
 
@@ -327,10 +392,17 @@ private func makeSUT(
 private func makeSUTWithOngoingTrip(
     entries: any EntryRepository = MockEntryRepository(),
     indexingQueue: any IndexingQueue = MockIndexingQueue(),
-    media: any MediaStore = MockMediaStore()
+    media: any MediaStore = MockMediaStore(),
+    recorder: any VoiceRecorder = MockVoiceRecorder()
 ) async -> (CaptureViewModel, Trip, Task<Void, Never>) {
     let trip = Trip(name: "Japan")
-    let sut = makeSUT(entries: entries, trips: FakeTripRepository(trips: [trip]), indexingQueue: indexingQueue, media: media)
+    let sut = makeSUT(
+        entries: entries,
+        trips: FakeTripRepository(trips: [trip]),
+        indexingQueue: indexingQueue,
+        media: media,
+        recorder: recorder
+    )
     var ongoing = Changes { sut.ongoingTrip }
     _ = await ongoing.next()
     let observing = Task { await sut.observeTrips() }

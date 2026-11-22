@@ -9,6 +9,7 @@ struct IndexingCoordinatorTests {
         let repository = SpyEntryRepository()
         let sut = IndexingCoordinator(
             contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(),
             indexer: MockEntryIndexer(returning: .success(EntryIndex(tags: ["walking"], mood: .tired))),
             repository: repository
         )
@@ -27,6 +28,7 @@ struct IndexingCoordinatorTests {
         let repository = SpyEntryRepository()
         let sut = IndexingCoordinator(
             contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(),
             indexer: MockEntryIndexer(returning: .failure(MockIndexerError())),
             repository: repository
         )
@@ -41,7 +43,9 @@ struct IndexingCoordinatorTests {
     @Test(.timeLimit(.minutes(1)))
     func indexesOneAtATimeInSaveOrder() async {
         let indexer = MockEntryIndexer(returning: .success(EntryIndex(tags: ["t"], mood: nil)))
-        let sut = IndexingCoordinator(contextProvider: StubContextProvider(), indexer: indexer, repository: SpyEntryRepository())
+        let sut = IndexingCoordinator(
+            contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(), indexer: indexer, repository: SpyEntryRepository())
 
         for text in ["first", "second", "third"] {
             await sut.enqueue(Entry(tripID: UUID(), text: text))
@@ -60,7 +64,9 @@ struct IndexingCoordinatorTests {
         )
         let indexer = MockEntryIndexer(returning: .success(EntryIndex(tags: ["ice cream"], mood: .happy)))
         let repository = SpyEntryRepository()
-        let sut = IndexingCoordinator(contextProvider: StubContextProvider(context: context), indexer: indexer, repository: repository)
+        let sut = IndexingCoordinator(
+            contextProvider: StubContextProvider(context: context),
+            transcriber: StubTranscriber(), indexer: indexer, repository: repository)
 
         await sut.enqueue(Entry(tripID: UUID(), text: "Black ice cream!"))
         await sut.waitUntilIdle()
@@ -75,6 +81,7 @@ struct IndexingCoordinatorTests {
         let repository = SpyEntryRepository()
         let sut = IndexingCoordinator(
             contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(),
             indexer: MockEntryIndexer(returning: .success(EntryIndex(tags: ["bus"], mood: nil))),
             repository: repository
         )
@@ -95,7 +102,9 @@ struct IndexingCoordinatorTests {
         for entry in [newer, done, older] { try await repository.save(entry) }
         let contextProvider = StubContextProvider(context: EntryContext(placeName: "Today's place"))
         let indexer = MockEntryIndexer(returning: .success(EntryIndex(tags: ["t"], mood: nil)))
-        let sut = IndexingCoordinator(contextProvider: contextProvider, indexer: indexer, repository: repository)
+        let sut = IndexingCoordinator(
+            contextProvider: contextProvider,
+            transcriber: StubTranscriber(), indexer: indexer, repository: repository)
 
         await sut.resumePendingEntries()
         await sut.waitUntilIdle()
@@ -104,5 +113,59 @@ struct IndexingCoordinatorTests {
         #expect(contextProvider.callCount == 0)
         #expect(repository.entries.first { $0.id == older.id }?.placeName == "Bergen")
         #expect(repository.entries.allSatisfy { $0.indexingStatus == .done })
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func transcribesAVoiceNoteBeforeTheModelSeesIt() async {
+        let indexer = MockEntryIndexer(returning: .success(EntryIndex(tags: ["walking"], mood: .tired)))
+        let repository = SpyEntryRepository()
+        let sut = IndexingCoordinator(
+            contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(result: .success("Walked twenty thousand steps")),
+            indexer: indexer,
+            repository: repository
+        )
+
+        await sut.enqueue(Entry(tripID: UUID(), text: "", audioName: "note.m4a"))
+        await sut.waitUntilIdle()
+
+        #expect(indexer.receivedEntries.first?.transcript == "Walked twenty thousand steps")
+        #expect(repository.entries.first?.transcript == "Walked twenty thousand steps")
+        #expect(repository.entries.first?.indexingStatus == .done)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func indexesEvenWhenTranscriptionFails() async {
+        let repository = SpyEntryRepository()
+        let sut = IndexingCoordinator(
+            contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(result: .failure(MockIndexerError())),
+            indexer: MockEntryIndexer(returning: .success(EntryIndex(tags: ["voice"], mood: nil))),
+            repository: repository
+        )
+
+        await sut.enqueue(Entry(tripID: UUID(), text: "", audioName: "note.m4a"))
+        await sut.waitUntilIdle()
+
+        #expect(repository.entries.first?.transcript == nil)
+        #expect(repository.entries.first?.audioName == "note.m4a")
+        #expect(repository.entries.first?.indexingStatus == .done)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func aResumedVoiceNoteIsTranscribedToo() async throws {
+        let repository = SpyEntryRepository()
+        try await repository.save(Entry(tripID: UUID(), text: "", audioName: "note.m4a"))
+        let sut = IndexingCoordinator(
+            contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(result: .success("Ferry to Miyajima")),
+            indexer: MockEntryIndexer(returning: .success(EntryIndex(tags: ["ferry"], mood: nil))),
+            repository: repository
+        )
+
+        await sut.resumePendingEntries()
+        await sut.waitUntilIdle()
+
+        #expect(repository.entries.first?.transcript == "Ferry to Miyajima")
     }
 }

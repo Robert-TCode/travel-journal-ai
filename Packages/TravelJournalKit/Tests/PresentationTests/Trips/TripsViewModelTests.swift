@@ -18,7 +18,8 @@ struct TripsViewModelTests {
             tripLifecycle: TripLifecycle(repository: trips),
             indexingQueue: MockIndexingQueue(),
             context: StubContextProvider(),
-            media: MockMediaStore()
+            media: MockMediaStore(),
+            recorder: MockVoiceRecorder()
         ))
         let observingTrips = Task { await sut.observeTrips() }
         let observingEntries = Task { await sut.observeEntries() }

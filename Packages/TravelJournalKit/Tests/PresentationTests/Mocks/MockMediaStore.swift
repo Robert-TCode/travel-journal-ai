@@ -23,4 +23,13 @@ final class MockMediaStore: MediaStore {
     func photoURL(named name: String) -> URL {
         URL.temporaryDirectory.appending(path: name)
     }
+
+    func storeAudio(movingFrom url: URL) async throws -> String {
+        if shouldFail { throw MockRepositoryError() }
+        return "voice.m4a"
+    }
+
+    func audioURL(named name: String) -> URL {
+        URL.temporaryDirectory.appending(path: name)
+    }
 }

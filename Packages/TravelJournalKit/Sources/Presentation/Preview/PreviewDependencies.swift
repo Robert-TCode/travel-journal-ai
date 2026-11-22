@@ -14,7 +14,8 @@ extension AppDependencies {
             tripLifecycle: TripLifecycle(repository: tripRepository),
             indexingQueue: PreviewIndexingQueue(),
             context: PreviewContextProvider(),
-            media: PreviewMediaStore()
+            media: PreviewMediaStore(),
+            recorder: PreviewVoiceRecorder()
         )
     }
 }
@@ -31,4 +32,16 @@ struct PreviewMediaStore: MediaStore {
     func photoURL(named name: String) -> URL {
         URL.temporaryDirectory.appending(path: name)
     }
+
+    func storeAudio(movingFrom url: URL) async throws -> String { "preview.m4a" }
+
+    func audioURL(named name: String) -> URL {
+        URL.temporaryDirectory.appending(path: name)
+    }
+}
+
+struct PreviewVoiceRecorder: VoiceRecorder {
+    func start() async throws {}
+    func stop() async -> URL? { nil }
+    func cancel() async {}
 }

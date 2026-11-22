@@ -5,6 +5,7 @@
 /// requests gain no speed and only add memory pressure.
 public actor IndexingCoordinator: IndexingQueue {
     private let contextProvider: any EntryContextProvider
+    private let transcriber: any Transcriber
     private let indexer: any EntryIndexer
     private let repository: any EntryRepository
     private var queue: [Task<Entry, Never>] = []
@@ -12,10 +13,12 @@ public actor IndexingCoordinator: IndexingQueue {
 
     public init(
         contextProvider: any EntryContextProvider,
+        transcriber: any Transcriber,
         indexer: any EntryIndexer,
         repository: any EntryRepository
     ) {
         self.contextProvider = contextProvider
+        self.transcriber = transcriber
         self.indexer = indexer
         self.repository = repository
     }
@@ -53,6 +56,17 @@ public actor IndexingCoordinator: IndexingQueue {
         return withContext
     }
 
+    /// Part of the serial step, so a pending voice note resumed after a relaunch is transcribed too.
+    private func addTranscript(to entry: Entry) async -> Entry {
+        guard let audioName = entry.audioName, entry.transcript == nil,
+              let transcript = try? await transcriber.transcribe(audioNamed: audioName)
+        else { return entry }
+        var transcribed = entry
+        transcribed.transcript = transcript
+        try? await repository.save(transcribed)
+        return transcribed
+    }
+
     private func drain() async {
         while !queue.isEmpty {
             let entry = await queue.removeFirst().value
@@ -62,6 +76,7 @@ public actor IndexingCoordinator: IndexingQueue {
     }
 
     private func index(_ entry: Entry) async {
+        let entry = await addTranscript(to: entry)
         var updated = entry
         do {
             updated = entry.applying(try await indexer.index(entry))

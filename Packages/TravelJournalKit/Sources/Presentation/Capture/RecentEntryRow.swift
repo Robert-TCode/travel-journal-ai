@@ -22,6 +22,9 @@ struct RecentEntryRow: View {
                     .font(.callout)
                     .lineLimit(3)
             }
+            if entry.audioName != nil {
+                voiceNote
+            }
             if let placeName = entry.placeName {
                 Label(placeName, systemImage: "mappin")
                     .font(.caption)
@@ -30,6 +33,18 @@ struct RecentEntryRow: View {
             metadata
         }
         .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private var voiceNote: some View {
+        Label("Voice note", systemImage: "waveform")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.purple)
+        if let transcript = entry.transcript, !transcript.isEmpty {
+            Text("“\(transcript)”")
+                .font(.callout)
+                .lineLimit(3)
+        }
     }
 
     @ViewBuilder

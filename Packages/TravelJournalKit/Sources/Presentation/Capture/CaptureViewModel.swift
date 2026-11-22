@@ -28,6 +28,8 @@ final class CaptureViewModel {
         }
     }
     private(set) var pendingPhotos: [PendingPhoto] = []
+    private(set) var recordingStartedAt: Date?
+    private(set) var microphoneDenied = false
     private(set) var isSaving = false
     private(set) var didSave = false
     private(set) var saveFailed = false
@@ -117,6 +119,39 @@ final class CaptureViewModel {
     func endOngoingTrip() async {
         guard let ongoingTrip else { return }
         try? await dependencies.tripLifecycle.end(ongoingTrip)
+    }
+
+    func startRecording() async {
+        microphoneDenied = false
+        do {
+            try await dependencies.recorder.start()
+            recordingStartedAt = .now
+        } catch VoiceRecorderError.microphoneAccessDenied {
+            microphoneDenied = true
+        } catch {
+            saveFailed = true
+        }
+    }
+
+    func cancelRecording() async {
+        recordingStartedAt = nil
+        await dependencies.recorder.cancel()
+    }
+
+    /// A voice note is its own entry: the audio is saved right away, the transcript follows with indexing.
+    func finishRecording() async {
+        recordingStartedAt = nil
+        guard let tripID = ongoingTrip?.id, let recording = await dependencies.recorder.stop() else { return }
+        saveFailed = false
+        do {
+            let audioName = try await dependencies.media.storeAudio(movingFrom: recording)
+            let entry = Entry(tripID: tripID, text: "", audioName: audioName)
+            try await dependencies.entries.save(entry)
+            didSave = true
+            await dependencies.indexingQueue.enqueue(entry)
+        } catch {
+            saveFailed = true
+        }
     }
 
     /// The screen never waits for indexing, and may disappear while it runs.

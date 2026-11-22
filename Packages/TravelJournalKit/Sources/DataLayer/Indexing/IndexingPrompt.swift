@@ -14,8 +14,12 @@ enum IndexingPrompt {
 
     static func prompt(for entry: Entry) -> String {
         var lines: [String] = []
-        if !entry.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            lines += ["<note>", entry.text.replacingOccurrences(of: "</note>", with: "< /note>"), "</note>"]
+        let note = [entry.text, entry.transcript ?? ""]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
+        if !note.isEmpty {
+            lines += ["<note>", note.replacingOccurrences(of: "</note>", with: "< /note>"), "</note>"]
         }
         if let placeName = entry.placeName {
             lines.append("Place: \(placeName)")

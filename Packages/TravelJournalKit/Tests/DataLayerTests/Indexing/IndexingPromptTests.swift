@@ -55,4 +55,14 @@ struct IndexingPromptTests {
     @Test func instructionsAskToTagWhatAPhotoShows() {
         #expect(IndexingPrompt.instructions.contains("When a photo is attached"))
     }
+
+    @Test func aVoiceNoteTranscriptIsPartOfTheNote() {
+        let entry = Entry(tripID: UUID(), text: "", audioName: "a.m4a", transcript: "Ferry to Miyajima")
+
+        #expect(IndexingPrompt.prompt(for: entry) == """
+            <note>
+            Ferry to Miyajima
+            </note>
+            """)
+    }
 }

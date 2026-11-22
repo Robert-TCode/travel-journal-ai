@@ -6,4 +6,9 @@ public protocol MediaStore: Sendable {
     func storePhoto(_ data: Data) async throws -> String
 
     func photoURL(named name: String) -> URL
+
+    /// Moves a finished recording into the store and returns its file name.
+    func storeAudio(movingFrom url: URL) async throws -> String
+
+    func audioURL(named name: String) -> URL
 }

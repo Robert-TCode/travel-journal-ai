@@ -1,9 +1,10 @@
 import PhotosUI
 import SwiftUI
 
-/// Camera (when the device has one) and library, side by side. Hands back each photo's original bytes.
-struct AddPhotoButtons: View {
+/// Camera (when the device has one), library and voice, side by side. Photos come back as their original bytes.
+struct CaptureActionButtons: View {
     let onPhoto: (Data) async -> Void
+    let onVoice: () -> Void
 
     @State private var isShowingCamera = false
     @State private var selection: [PhotosPickerItem] = []
@@ -24,6 +25,11 @@ struct AddPhotoButtons: View {
                     .frame(maxWidth: .infinity)
             }
             .tint(.blue)
+            Button(action: onVoice) {
+                Label("Voice", systemImage: "mic")
+                    .frame(maxWidth: .infinity)
+            }
+            .tint(.purple)
         }
         .buttonStyle(.bordered)
         .font(.subheadline)
@@ -46,3 +52,4 @@ struct AddPhotoButtons: View {
         }
     }
 }
+

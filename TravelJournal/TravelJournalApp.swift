@@ -20,6 +20,7 @@ struct TravelJournalApp: App {
         let media = FileMediaStore()
         indexingCoordinator = IndexingCoordinator(
             contextProvider: context,
+            transcriber: SpeechTranscriberService(media: media),
             indexer: FoundationModelsEntryIndexer(media: media),
             repository: store.entries
         )
@@ -30,7 +31,8 @@ struct TravelJournalApp: App {
             tripLifecycle: TripLifecycle(repository: store.trips),
             indexingQueue: indexingCoordinator,
             context: context,
-            media: media
+            media: media,
+            recorder: AudioFileVoiceRecorder()
         )
     }
 
