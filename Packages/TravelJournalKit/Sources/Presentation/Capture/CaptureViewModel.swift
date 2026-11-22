@@ -6,6 +6,7 @@ import Observation
 final class CaptureViewModel {
     private let availabilityService: any AIModelAvailabilityService
     private let repository: any EntryRepository
+    private let indexingQueue: any IndexingQueue
     private let tripID: UUID
 
     private(set) var availability: AIModelAvailability?
@@ -20,9 +21,15 @@ final class CaptureViewModel {
     private(set) var didSave = false
     private(set) var saveFailed = false
 
-    init(availabilityService: any AIModelAvailabilityService, repository: any EntryRepository, tripID: UUID) {
+    init(
+        availabilityService: any AIModelAvailabilityService,
+        repository: any EntryRepository,
+        indexingQueue: any IndexingQueue,
+        tripID: UUID
+    ) {
         self.availabilityService = availabilityService
         self.repository = repository
+        self.indexingQueue = indexingQueue
         self.tripID = tripID
     }
 
@@ -37,7 +44,8 @@ final class CaptureViewModel {
         }
     }
 
-    /// Stores the note verbatim. No model involved: indexing happens later, outside this screen.
+    /// Stores the note verbatim, then hands it to the app-level indexing queue.
+    /// No model involved here: the screen never waits for indexing, and may disappear while it runs.
     func save() async {
         guard canSave else { return }
         isSaving = true
@@ -45,12 +53,15 @@ final class CaptureViewModel {
         saveFailed = false
         defer { isSaving = false }
 
+        let entry = Entry(tripID: tripID, text: noteText)
         do {
-            try await repository.save(Entry(tripID: tripID, text: noteText))
-            noteText = ""
-            didSave = true
+            try await repository.save(entry)
         } catch {
             saveFailed = true
+            return
         }
+        noteText = ""
+        didSave = true
+        await indexingQueue.enqueue(entry)
     }
 }

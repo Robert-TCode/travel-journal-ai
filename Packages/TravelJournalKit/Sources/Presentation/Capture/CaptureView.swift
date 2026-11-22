@@ -5,10 +5,16 @@ struct CaptureView: View {
     @State private var viewModel: CaptureViewModel
     @FocusState private var isEditingNote: Bool
 
-    init(availabilityService: any AIModelAvailabilityService, repository: any EntryRepository, tripID: UUID) {
+    init(
+        availabilityService: any AIModelAvailabilityService,
+        repository: any EntryRepository,
+        indexingQueue: any IndexingQueue,
+        tripID: UUID
+    ) {
         _viewModel = State(initialValue: CaptureViewModel(
             availabilityService: availabilityService,
             repository: repository,
+            indexingQueue: indexingQueue,
             tripID: tripID
         ))
     }
@@ -88,6 +94,7 @@ struct CaptureView: View {
     CaptureView(
         availabilityService: PreviewAvailabilityService(.available),
         repository: PreviewEntryRepository(),
+        indexingQueue: PreviewIndexingQueue(),
         tripID: UUID()
     )
 }
@@ -96,6 +103,7 @@ struct CaptureView: View {
     CaptureView(
         availabilityService: PreviewAvailabilityService(.unavailable(reason: .notEnabled)),
         repository: PreviewEntryRepository(),
+        indexingQueue: PreviewIndexingQueue(),
         tripID: UUID()
     )
 }
@@ -104,6 +112,7 @@ struct CaptureView: View {
     CaptureView(
         availabilityService: PreviewAvailabilityService(.unavailable(reason: .notReadyYet)),
         repository: PreviewEntryRepository(),
+        indexingQueue: PreviewIndexingQueue(),
         tripID: UUID()
     )
 }
@@ -112,6 +121,7 @@ struct CaptureView: View {
     CaptureView(
         availabilityService: PreviewAvailabilityService(.unavailable(reason: .notSupported)),
         repository: PreviewEntryRepository(),
+        indexingQueue: PreviewIndexingQueue(),
         tripID: UUID()
     )
 }

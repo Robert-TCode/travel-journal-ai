@@ -96,6 +96,27 @@ struct CaptureViewModelSaveTests {
         #expect(!sut.didSave)
     }
 
+    @Test func handsTheSavedEntryToIndexing() async {
+        let repository = MockEntryRepository()
+        let queue = MockIndexingQueue()
+        let sut = makeSUT(repository: repository, indexingQueue: queue)
+        sut.noteText = "Black ice cream at Owakudani."
+
+        await sut.save()
+
+        #expect(queue.enqueuedEntries.map(\.id) == repository.savedEntries.map(\.id))
+    }
+
+    @Test func doesNotIndexWhatWasNotSaved() async {
+        let queue = MockIndexingQueue()
+        let sut = makeSUT(repository: MockEntryRepository(failing: true), indexingQueue: queue)
+        sut.noteText = "Don't lose me."
+
+        await sut.save()
+
+        #expect(queue.enqueuedEntries.isEmpty)
+    }
+
     @Test func keepsTheNoteWhenSavingFails() async {
         let sut = makeSUT(repository: MockEntryRepository(failing: true))
         sut.noteText = "Don't lose me."
@@ -124,9 +145,15 @@ struct CaptureViewModelSaveTests {
 private func makeSUT(
     availabilityService: any AIModelAvailabilityService = MockAvailabilityService(),
     repository: any EntryRepository = MockEntryRepository(),
+    indexingQueue: any IndexingQueue = MockIndexingQueue(),
     tripID: UUID = UUID()
 ) -> CaptureViewModel {
-    CaptureViewModel(availabilityService: availabilityService, repository: repository, tripID: tripID)
+    CaptureViewModel(
+        availabilityService: availabilityService,
+        repository: repository,
+        indexingQueue: indexingQueue,
+        tripID: tripID
+    )
 }
 
 /// Waits for the view model's `availability` to change instead of sleeping.
