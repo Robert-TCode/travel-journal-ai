@@ -47,7 +47,16 @@ xcodebuild test -project TravelJournal.xcodeproj -scheme TravelJournal -destinat
 
 ## Privacy
 
-Indexing and search run on device. Data leaves the phone only when you explicitly ask a question that needs a cloud model, and the UI says so. No API keys ship in the binary.
+Indexing and search run on device. Your notes never leave the phone unless you explicitly ask a question that needs a cloud model, and the UI says so. No API keys ship in the binary.
+
+What does leave the phone when you save an entry, and why:
+
+| Data | Sent to | Why |
+|---|---|---|
+| Coordinates | Apple Maps (MapKit reverse geocoding) | Turn a location into a place name |
+| Coordinates | [Open-Meteo](https://open-meteo.com) (no account, no key) | Weather and day/night at that moment |
+
+Nothing else is sent: no note text, no tags, no identifiers. Without location permission, nothing is sent at all.
 
 ## Measurements
 
