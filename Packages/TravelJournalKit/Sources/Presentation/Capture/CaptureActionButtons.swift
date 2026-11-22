@@ -15,24 +15,17 @@ struct CaptureActionButtons: View {
                 Button {
                     isShowingCamera = true
                 } label: {
-                    Label("Camera", systemImage: "camera")
-                        .frame(maxWidth: .infinity)
+                    CaptureActionTile(title: "Camera", systemImage: "camera.fill", tint: .orange)
                 }
-                .tint(.orange)
             }
             PhotosPicker(selection: $selection, maxSelectionCount: 4, matching: .images) {
-                Label("Photos", systemImage: "photo.on.rectangle")
-                    .frame(maxWidth: .infinity)
+                CaptureActionTile(title: "Photos", systemImage: "photo.on.rectangle.angled", tint: .blue)
             }
-            .tint(.blue)
             Button(action: onVoice) {
-                Label("Voice", systemImage: "mic")
-                    .frame(maxWidth: .infinity)
+                CaptureActionTile(title: "Voice", systemImage: "mic.fill", tint: .purple)
             }
-            .tint(.purple)
         }
-        .buttonStyle(.bordered)
-        .font(.subheadline)
+        .buttonStyle(.plain)
         .fullScreenCover(isPresented: $isShowingCamera) {
             CameraPicker { data in
                 Task { await onPhoto(data) }
@@ -53,3 +46,22 @@ struct CaptureActionButtons: View {
     }
 }
 
+private struct CaptureActionTile: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.title3)
+            Text(title)
+                .font(.caption.weight(.medium))
+        }
+        .foregroundStyle(tint)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}

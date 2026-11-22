@@ -25,10 +25,6 @@ struct NoteComposerView: View {
                 if !viewModel.pendingPhotos.isEmpty {
                     PendingPhotosStrip(photos: viewModel.pendingPhotos, onRemove: viewModel.removePhoto)
                 }
-                CaptureActionButtons(
-                    onPhoto: { data in await viewModel.addPhoto(data) },
-                    onVoice: { isRecordingVoice = true }
-                )
             } header: {
                 Text("\(trip.name) · day \(viewModel.dayNumber(of: trip))")
                     .font(.subheadline.weight(.semibold))
@@ -37,7 +33,18 @@ struct NoteComposerView: View {
             }
 
             Section {
+                CaptureActionButtons(
+                    onPhoto: { data in await viewModel.addPhoto(data) },
+                    onVoice: { isRecordingVoice = true }
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+
+            Section {
                 saveButton
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
             } footer: {
                 if viewModel.didSave {
                     Label("Saved", systemImage: "checkmark.circle")
@@ -66,12 +73,20 @@ struct NoteComposerView: View {
             isEditingNote = false
             Task { await viewModel.save() }
         } label: {
-            if viewModel.isSaving {
-                ProgressView()
-            } else {
-                Text("Save")
+            Group {
+                if viewModel.isSaving {
+                    ProgressView()
+                } else {
+                    Text("Save memory")
+                }
             }
+            .font(.body.weight(.semibold))
+            .frame(maxWidth: .infinity)
         }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .controlSize(.large)
+        .tint(.orange)
         .disabled(!viewModel.canSave)
     }
 }
