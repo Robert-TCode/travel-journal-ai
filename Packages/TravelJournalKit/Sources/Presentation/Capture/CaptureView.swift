@@ -1,35 +1,58 @@
 import SwiftUI
 import Domain
+import Foundation
 
 struct CaptureView: View {
     @State private var viewModel: CaptureViewModel
+    @State private var isConfirmingEnd = false
     @FocusState private var isEditingNote: Bool
 
-    init(
-        availabilityService: any AIModelAvailabilityService,
-        repository: any EntryRepository,
-        indexingQueue: any IndexingQueue,
-        tripID: UUID
-    ) {
-        _viewModel = State(initialValue: CaptureViewModel(
-            availabilityService: availabilityService,
-            repository: repository,
-            indexingQueue: indexingQueue,
-            tripID: tripID
-        ))
+    init(dependencies: AppDependencies) {
+        _viewModel = State(initialValue: CaptureViewModel(dependencies: dependencies))
     }
 
     var body: some View {
         NavigationStack {
-            noteForm
+            content
                 .navigationTitle("Capture")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    if viewModel.ongoingTrip != nil {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("End trip") { isConfirmingEnd = true }
+                        }
+                    }
+                }
+                .confirmationDialog(
+                    "End \(viewModel.ongoingTrip?.name ?? "this trip")?",
+                    isPresented: $isConfirmingEnd,
+                    titleVisibility: .visible
+                ) {
+                    Button("End trip", role: .destructive) {
+                        Task { await viewModel.endOngoingTrip() }
+                    }
+                } message: {
+                    Text("Its memories stay in Trips. New memories will need a new trip.")
+                }
         }
         .task { await viewModel.observeAvailability() }
-        .task { await viewModel.observeRecentEntries() }
+        .task { await viewModel.observeTrips() }
+        .task(id: viewModel.ongoingTrip?.id) { await viewModel.observeRecentEntries() }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if !viewModel.hasLoadedTrips {
+            ProgressView()
+        } else if let trip = viewModel.ongoingTrip {
+            noteForm(for: trip)
+        } else {
+            StartTripView(viewModel: viewModel)
+        }
     }
 
     /// Saving never depends on Apple Intelligence; availability only decides whether smart tags will follow.
-    private var noteForm: some View {
+    private func noteForm(for trip: Trip) -> some View {
         Form {
             if case .unavailable(let reason) = viewModel.availability {
                 Section {
@@ -37,10 +60,26 @@ struct CaptureView: View {
                 }
             }
 
-            Section("Note") {
+            Section {
                 TextEditor(text: $viewModel.noteText)
-                    .frame(minHeight: 120)
+                    .font(.callout)
+                    .frame(minHeight: 110)
                     .focused($isEditingNote)
+                    .overlay(alignment: .topLeading) {
+                        if viewModel.noteText.isEmpty {
+                            Text("What happened?")
+                                .font(.callout)
+                                .foregroundStyle(.tertiary)
+                                .padding(.top, 8)
+                                .padding(.leading, 5)
+                                .allowsHitTesting(false)
+                        }
+                    }
+            } header: {
+                Text("\(trip.name) · day \(viewModel.dayNumber(of: trip))")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .textCase(nil)
             }
 
             Section {
@@ -99,38 +138,14 @@ struct CaptureView: View {
     }
 }
 
-#Preview("Available") {
-    CaptureView(
-        availabilityService: PreviewAvailabilityService(.available),
-        repository: PreviewEntryRepository(),
-        indexingQueue: PreviewIndexingQueue(),
-        tripID: UUID()
-    )
+#Preview("Ongoing trip") {
+    CaptureView(dependencies: .preview())
 }
 
-#Preview("Not enabled") {
-    CaptureView(
-        availabilityService: PreviewAvailabilityService(.unavailable(reason: .notEnabled)),
-        repository: PreviewEntryRepository(),
-        indexingQueue: PreviewIndexingQueue(),
-        tripID: UUID()
-    )
+#Preview("No trip") {
+    CaptureView(dependencies: .preview(trips: []))
 }
 
-#Preview("Getting ready") {
-    CaptureView(
-        availabilityService: PreviewAvailabilityService(.unavailable(reason: .notReadyYet)),
-        repository: PreviewEntryRepository(),
-        indexingQueue: PreviewIndexingQueue(),
-        tripID: UUID()
-    )
-}
-
-#Preview("Not supported") {
-    CaptureView(
-        availabilityService: PreviewAvailabilityService(.unavailable(reason: .notSupported)),
-        repository: PreviewEntryRepository(),
-        indexingQueue: PreviewIndexingQueue(),
-        tripID: UUID()
-    )
+#Preview("Smart tags off") {
+    CaptureView(dependencies: .preview(availability: .unavailable(reason: .notEnabled)))
 }

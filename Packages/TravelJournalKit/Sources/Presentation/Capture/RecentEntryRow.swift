@@ -7,6 +7,7 @@ struct RecentEntryRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(entry.text)
+                .font(.callout)
                 .lineLimit(3)
             if let placeName = entry.placeName {
                 Label(placeName, systemImage: "mappin")

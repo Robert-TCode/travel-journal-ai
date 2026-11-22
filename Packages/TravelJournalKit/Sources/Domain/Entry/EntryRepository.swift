@@ -9,6 +9,9 @@ public protocol EntryRepository: Sendable {
     /// Each call returns a new stream, so every screen gets its own.
     func entryUpdates(tripID: UUID) async -> AsyncStream<[Entry]>
 
+    /// Every trip's entries, newest first, with the same delivery as `entryUpdates(tripID:)`.
+    func allEntryUpdates() async -> AsyncStream<[Entry]>
+
     /// Entries whose indexing never finished, oldest first, so they can be resumed after a restart.
     func pendingEntries() async throws -> [Entry]
 }

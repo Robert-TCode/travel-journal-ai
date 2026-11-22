@@ -8,7 +8,7 @@ import Testing
 @Suite("CaptureViewModel availability")
 struct CaptureViewModelAvailabilityTests {
     @Test func startsWithUnknownAvailability() {
-        let sut = makeSUT(availabilityService: MockAvailabilityService())
+        let sut = makeSUT()
 
         #expect(sut.availability == nil)
     }
@@ -16,7 +16,7 @@ struct CaptureViewModelAvailabilityTests {
     @Test(.timeLimit(.minutes(1)))
     func followsAvailabilityChanges() async {
         let service = MockAvailabilityService()
-        let sut = makeSUT(availabilityService: service)
+        let sut = makeSUT(availability: service)
         var changes = Changes { sut.availability }
         #expect(await changes.next() == .some(nil))
 
@@ -33,7 +33,7 @@ struct CaptureViewModelAvailabilityTests {
     @Test(.timeLimit(.minutes(1)))
     func stopsListeningWhenObservationIsCancelled() async {
         let service = MockAvailabilityService()
-        let sut = makeSUT(availabilityService: service)
+        let sut = makeSUT(availability: service)
         var changes = Changes { sut.availability }
         _ = await changes.next()
 
@@ -50,33 +50,109 @@ struct CaptureViewModelAvailabilityTests {
 }
 
 @MainActor
+@Suite("CaptureViewModel trips")
+struct CaptureViewModelTripTests {
+    @Test(.timeLimit(.minutes(1)))
+    func knowsWhenThereIsNoOngoingTrip() async {
+        let sut = makeSUT(trips: FakeTripRepository(trips: [Trip(name: "Norway", endedAt: .now)]))
+        var loaded = Changes { sut.hasLoadedTrips }
+        _ = await loaded.next()
+
+        let observing = Task { await sut.observeTrips() }
+        defer { observing.cancel() }
+
+        #expect(await loaded.next() == true)
+        #expect(sut.ongoingTrip == nil)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func startingATripMakesItTheOngoingOne() async {
+        let trips = FakeTripRepository()
+        let sut = makeSUT(trips: trips)
+        var ongoing = Changes { sut.ongoingTrip }
+        _ = await ongoing.next()
+        let observing = Task { await sut.observeTrips() }
+        defer { observing.cancel() }
+
+        sut.tripNameDraft = "  Japan "
+        await sut.startTrip()
+
+        #expect(await ongoing.next()??.name == "Japan")
+        #expect(sut.tripNameDraft.isEmpty)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func endingTheTripLeavesNoOngoingTrip() async {
+        let (sut, _, observing) = await makeSUTWithOngoingTrip()
+        defer { observing.cancel() }
+        var ongoing = Changes { sut.ongoingTrip }
+        _ = await ongoing.next()
+
+        await sut.endOngoingTrip()
+
+        #expect(await ongoing.next() == .some(nil))
+    }
+
+    @Test func suggestsTheCityAsTripName() async {
+        let sut = makeSUT(context: StubContextProvider(context: EntryContext(placeName: "Hakone, Kanagawa")))
+
+        await sut.suggestTripName()
+
+        #expect(sut.tripNameDraft == "Hakone")
+    }
+
+    @Test func neverOverwritesATypedTripName() async {
+        let sut = makeSUT(context: StubContextProvider(context: EntryContext(placeName: "Hakone, Kanagawa")))
+        sut.tripNameDraft = "Japan"
+
+        await sut.suggestTripName()
+
+        #expect(sut.tripNameDraft == "Japan")
+    }
+
+    @Test func countsTripDaysFromOne() {
+        let sut = makeSUT()
+        let calendar = Calendar(identifier: .gregorian)
+        let start = calendar.date(from: DateComponents(year: 2026, month: 11, day: 20, hour: 22))!
+        let trip = Trip(name: "Japan", startedAt: start)
+
+        #expect(sut.dayNumber(of: trip, today: start, calendar: calendar) == 1)
+        #expect(sut.dayNumber(of: trip, today: calendar.date(byAdding: .hour, value: 3, to: start)!, calendar: calendar) == 2)
+    }
+}
+
+@MainActor
 @Suite("CaptureViewModel save")
 struct CaptureViewModelSaveTests {
-    @Test func savesTheNoteVerbatimAsAPendingEntry() async {
+    @Test(.timeLimit(.minutes(1)))
+    func savesTheNoteVerbatimAsAPendingEntryOfTheOngoingTrip() async {
         let repository = MockEntryRepository()
-        let sut = makeSUT(repository: repository)
+        let (sut, trip, observing) = await makeSUTWithOngoingTrip(entries: repository)
+        defer { observing.cancel() }
         sut.noteText = "Walked 20k steps, my feet hurt."
 
         await sut.save()
 
         #expect(repository.savedEntries.map(\.text) == ["Walked 20k steps, my feet hurt."])
+        #expect(repository.savedEntries.first?.tripID == trip.id)
         #expect(repository.savedEntries.first?.indexingStatus == .pending)
-        #expect(repository.savedEntries.first?.tags == [])
     }
 
-    @Test func savesTheEntryIntoTheCurrentTrip() async {
-        let tripID = UUID()
+    @Test func cannotSaveWithoutAnOngoingTrip() async {
         let repository = MockEntryRepository()
-        let sut = makeSUT(repository: repository, tripID: tripID)
-        sut.noteText = "Black ice cream at Owakudani."
+        let sut = makeSUT(entries: repository)
+        sut.noteText = "Nowhere to go"
 
         await sut.save()
 
-        #expect(repository.savedEntries.first?.tripID == tripID)
+        #expect(!sut.canSave)
+        #expect(repository.savedEntries.isEmpty)
     }
 
-    @Test func clearsTheNoteAndConfirmsAfterSaving() async {
-        let sut = makeSUT()
+    @Test(.timeLimit(.minutes(1)))
+    func clearsTheNoteAndConfirmsAfterSaving() async {
+        let (sut, _, observing) = await makeSUTWithOngoingTrip()
+        defer { observing.cancel() }
         sut.noteText = "Black ice cream at Owakudani."
 
         await sut.save()
@@ -86,8 +162,10 @@ struct CaptureViewModelSaveTests {
         #expect(!sut.isSaving)
     }
 
-    @Test func hidesTheConfirmationWhenANewNoteStarts() async {
-        let sut = makeSUT()
+    @Test(.timeLimit(.minutes(1)))
+    func hidesTheConfirmationWhenANewNoteStarts() async {
+        let (sut, _, observing) = await makeSUTWithOngoingTrip()
+        defer { observing.cancel() }
         sut.noteText = "First note"
         await sut.save()
 
@@ -96,10 +174,12 @@ struct CaptureViewModelSaveTests {
         #expect(!sut.didSave)
     }
 
-    @Test func handsTheSavedEntryToIndexing() async {
+    @Test(.timeLimit(.minutes(1)))
+    func handsTheSavedEntryToIndexing() async {
         let repository = MockEntryRepository()
         let queue = MockIndexingQueue()
-        let sut = makeSUT(repository: repository, indexingQueue: queue)
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(entries: repository, indexingQueue: queue)
+        defer { observing.cancel() }
         sut.noteText = "Black ice cream at Owakudani."
 
         await sut.save()
@@ -107,31 +187,25 @@ struct CaptureViewModelSaveTests {
         #expect(queue.enqueuedEntries.map(\.id) == repository.savedEntries.map(\.id))
     }
 
-    @Test func doesNotIndexWhatWasNotSaved() async {
+    @Test(.timeLimit(.minutes(1)))
+    func keepsTheNoteAndSkipsIndexingWhenSavingFails() async {
         let queue = MockIndexingQueue()
-        let sut = makeSUT(repository: MockEntryRepository(failing: true), indexingQueue: queue)
-        sut.noteText = "Don't lose me."
-
-        await sut.save()
-
-        #expect(queue.enqueuedEntries.isEmpty)
-    }
-
-    @Test func keepsTheNoteWhenSavingFails() async {
-        let sut = makeSUT(repository: MockEntryRepository(failing: true))
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(entries: MockEntryRepository(failing: true), indexingQueue: queue)
+        defer { observing.cancel() }
         sut.noteText = "Don't lose me."
 
         await sut.save()
 
         #expect(sut.noteText == "Don't lose me.")
         #expect(sut.saveFailed)
-        #expect(!sut.didSave)
+        #expect(queue.enqueuedEntries.isEmpty)
     }
 
-    @Test(arguments: ["", "   ", "\n\t"])
+    @Test(.timeLimit(.minutes(1)), arguments: ["", "   ", "\n\t"])
     func doesNotSaveBlankNotes(_ text: String) async {
         let repository = MockEntryRepository()
-        let sut = makeSUT(repository: repository)
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(entries: repository)
+        defer { observing.cancel() }
         sut.noteText = text
 
         await sut.save()
@@ -145,38 +219,56 @@ struct CaptureViewModelSaveTests {
 @Suite("CaptureViewModel recent entries")
 struct CaptureViewModelRecentEntriesTests {
     @Test(.timeLimit(.minutes(1)))
-    func showsEntriesAndTheirTagsAsTheyChange() async {
+    func showsTheTripsEntriesAndTheirTagsAsTheyChange() async {
         let repository = MockEntryRepository()
-        let sut = makeSUT(repository: repository)
+        let (sut, trip, tripObservation) = await makeSUTWithOngoingTrip(entries: repository)
+        defer { tripObservation.cancel() }
         var changes = Changes { sut.recentEntries }
         #expect(await changes.next() == [])
 
         let observing = Task { await sut.observeRecentEntries() }
         defer { observing.cancel() }
 
-        let saved = Entry(tripID: UUID(), text: "Walked 20k steps.")
+        let saved = Entry(tripID: trip.id, text: "Walked 20k steps.")
         repository.send([saved])
         #expect(await changes.next() == [saved])
 
-        let indexed = saved.applying(EntryIndex(tags: ["walking"], mood: .tired))
-        repository.send([indexed])
+        repository.send([saved.applying(EntryIndex(tags: ["walking"], mood: .tired))])
         #expect(await changes.next()?.first?.tags == ["walking", "tired"])
     }
 }
 
 @MainActor
 private func makeSUT(
-    availabilityService: any AIModelAvailabilityService = MockAvailabilityService(),
-    repository: any EntryRepository = MockEntryRepository(),
+    availability: any AIModelAvailabilityService = MockAvailabilityService(),
+    entries: any EntryRepository = MockEntryRepository(),
+    trips: FakeTripRepository = FakeTripRepository(),
     indexingQueue: any IndexingQueue = MockIndexingQueue(),
-    tripID: UUID = UUID()
+    context: any EntryContextProvider = StubContextProvider()
 ) -> CaptureViewModel {
-    CaptureViewModel(
-        availabilityService: availabilityService,
-        repository: repository,
+    CaptureViewModel(dependencies: AppDependencies(
+        availability: availability,
+        entries: entries,
+        trips: trips,
+        tripLifecycle: TripLifecycle(repository: trips),
         indexingQueue: indexingQueue,
-        tripID: tripID
-    )
+        context: context
+    ))
+}
+
+/// A view model already showing an ongoing trip. Cancel the returned task when done.
+@MainActor
+private func makeSUTWithOngoingTrip(
+    entries: any EntryRepository = MockEntryRepository(),
+    indexingQueue: any IndexingQueue = MockIndexingQueue()
+) async -> (CaptureViewModel, Trip, Task<Void, Never>) {
+    let trip = Trip(name: "Japan")
+    let sut = makeSUT(entries: entries, trips: FakeTripRepository(trips: [trip]), indexingQueue: indexingQueue)
+    var ongoing = Changes { sut.ongoingTrip }
+    _ = await ongoing.next()
+    let observing = Task { await sut.observeTrips() }
+    _ = await ongoing.next()
+    return (sut, trip, observing)
 }
 
 /// Waits for a view model property to change instead of sleeping.

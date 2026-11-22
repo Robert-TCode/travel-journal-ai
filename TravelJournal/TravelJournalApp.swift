@@ -6,44 +6,36 @@ import Presentation
 // Composition root: the only place that wires DataLayer implementations into Domain protocols.
 @main
 struct TravelJournalApp: App {
-    private let availabilityService = SystemModelAvailabilityService()
-    private let repository: SwiftDataEntryRepository
+    private let dependencies: AppDependencies
     private let indexingCoordinator: IndexingCoordinator
-    private let currentTripID = Self.placeholderTripID()
 
     init() {
+        let store: JournalStore
         do {
-            repository = try SwiftDataEntryRepository.onDisk()
+            store = try JournalStore.onDisk()
         } catch {
             fatalError("Couldn't open the journal store: \(error)")
         }
+        let context = DeviceEntryContextProvider()
         indexingCoordinator = IndexingCoordinator(
-            contextProvider: DeviceEntryContextProvider(),
+            contextProvider: context,
             indexer: FoundationModelsEntryIndexer(),
-            repository: repository
+            repository: store.entries
+        )
+        dependencies = AppDependencies(
+            availability: SystemModelAvailabilityService(),
+            entries: store.entries,
+            trips: store.trips,
+            tripLifecycle: TripLifecycle(repository: store.trips),
+            indexingQueue: indexingCoordinator,
+            context: context
         )
     }
 
     var body: some Scene {
         WindowGroup {
-            RootView(
-                availabilityService: availabilityService,
-                repository: repository,
-                indexingQueue: indexingCoordinator,
-                currentTripID: currentTripID
-            )
-            .task { await indexingCoordinator.resumePendingEntries() }
+            RootView(dependencies: dependencies)
+                .task { await indexingCoordinator.resumePendingEntries() }
         }
-    }
-
-    /// Until start / end trip exists, every entry goes to one trip that survives relaunches.
-    private static func placeholderTripID() -> UUID {
-        let key = "placeholderTripID"
-        if let stored = UserDefaults.standard.string(forKey: key).flatMap(UUID.init(uuidString:)) {
-            return stored
-        }
-        let id = UUID()
-        UserDefaults.standard.set(id.uuidString, forKey: key)
-        return id
     }
 }

@@ -48,6 +48,10 @@ final class SpyEntryRepository: EntryRepository {
         AsyncStream { $0.finish() }
     }
 
+    func allEntryUpdates() -> AsyncStream<[Entry]> {
+        AsyncStream { $0.finish() }
+    }
+
     func pendingEntries() -> [Entry] {
         entries.filter { $0.indexingStatus == .pending }.sorted { $0.createdAt < $1.createdAt }
     }

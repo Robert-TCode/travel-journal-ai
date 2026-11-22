@@ -1,46 +1,31 @@
 import SwiftUI
 import Domain
 
-public struct RootView: View {
-    private let availabilityService: any AIModelAvailabilityService
-    private let repository: any EntryRepository
-    private let indexingQueue: any IndexingQueue
-    private let currentTripID: UUID
+enum AppTab: Hashable {
+    case trips
+    case capture
+}
 
-    public init(
-        availabilityService: any AIModelAvailabilityService,
-        repository: any EntryRepository,
-        indexingQueue: any IndexingQueue,
-        currentTripID: UUID
-    ) {
-        self.availabilityService = availabilityService
-        self.repository = repository
-        self.indexingQueue = indexingQueue
-        self.currentTripID = currentTripID
+public struct RootView: View {
+    private let dependencies: AppDependencies
+    @State private var selectedTab = AppTab.trips
+
+    public init(dependencies: AppDependencies) {
+        self.dependencies = dependencies
     }
 
     public var body: some View {
-        TabView {
-            Tab("Trips", systemImage: "map") {
-                TripsView()
+        TabView(selection: $selectedTab) {
+            Tab("Trips", systemImage: "map", value: .trips) {
+                TripsView(dependencies: dependencies, onStartTrip: { selectedTab = .capture })
             }
-            Tab("Capture", systemImage: "plus.circle") {
-                CaptureView(
-                    availabilityService: availabilityService,
-                    repository: repository,
-                    indexingQueue: indexingQueue,
-                    tripID: currentTripID
-                )
+            Tab("Capture", systemImage: "plus.circle", value: .capture) {
+                CaptureView(dependencies: dependencies)
             }
         }
     }
 }
 
 #Preview {
-    RootView(
-        availabilityService: PreviewAvailabilityService(.available),
-        repository: PreviewEntryRepository(),
-        indexingQueue: PreviewIndexingQueue(),
-        currentTripID: UUID()
-    )
+    RootView(dependencies: .preview())
 }

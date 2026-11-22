@@ -10,7 +10,7 @@ struct SwiftDataEntryRepositoryTests {
 
     @Test(.timeLimit(.minutes(1)))
     func emitsTheCurrentListThenEveryChange() async throws {
-        let sut = try SwiftDataEntryRepository.inMemory()
+        let sut = try JournalStore.inMemory().entries
         var updates = await sut.entryUpdates(tripID: tripID).makeAsyncIterator()
         #expect(await updates.next() == [])
 
@@ -25,7 +25,7 @@ struct SwiftDataEntryRepositoryTests {
 
     @Test(.timeLimit(.minutes(1)))
     func listsOnlyTheTripsEntriesNewestFirst() async throws {
-        let sut = try SwiftDataEntryRepository.inMemory()
+        let sut = try JournalStore.inMemory().entries
         try await sut.save(Entry(tripID: tripID, text: "older", createdAt: Date(timeIntervalSince1970: 100)))
         try await sut.save(Entry(tripID: tripID, text: "newer", createdAt: Date(timeIntervalSince1970: 200)))
         try await sut.save(Entry(tripID: UUID(), text: "another trip"))
@@ -36,7 +36,7 @@ struct SwiftDataEntryRepositoryTests {
     }
 
     @Test func roundTripsEveryField() async throws {
-        let sut = try SwiftDataEntryRepository.inMemory()
+        let sut = try JournalStore.inMemory().entries
         let entry = Entry(
             tripID: tripID,
             text: "Black ice cream",
@@ -55,7 +55,7 @@ struct SwiftDataEntryRepositoryTests {
     }
 
     @Test func pendingEntriesAreOnlyPendingOnesOldestFirst() async throws {
-        let sut = try SwiftDataEntryRepository.inMemory()
+        let sut = try JournalStore.inMemory().entries
         try await sut.save(Entry(tripID: tripID, text: "newer", createdAt: Date(timeIntervalSince1970: 200)))
         try await sut.save(Entry(tripID: tripID, text: "older", createdAt: Date(timeIntervalSince1970: 100)))
         try await sut.save(Entry(tripID: tripID, text: "done", indexingStatus: .done))
@@ -66,12 +66,25 @@ struct SwiftDataEntryRepositoryTests {
 
     /// What survives a relaunch: a second repository over the same store sees the first one's writes.
     @Test func anotherRepositoryOnTheSameStoreSeesSavedEntries() async throws {
-        let container = try ModelContainer(for: EntryRecord.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try ModelContainer(for: EntryRecord.self, TripRecord.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         let entry = Entry(tripID: tripID, text: "Saved before relaunch")
         try await SwiftDataEntryRepository(container: container).save(entry)
 
         var updates = await SwiftDataEntryRepository(container: container).entryUpdates(tripID: tripID).makeAsyncIterator()
 
         #expect(await updates.next() == [entry])
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func allEntriesSpanEveryTrip() async throws {
+        let sut = try JournalStore.inMemory().entries
+        var updates = await sut.allEntryUpdates().makeAsyncIterator()
+        #expect(await updates.next() == [])
+
+        try await sut.save(Entry(tripID: tripID, text: "Japan"))
+        _ = await updates.next()
+        try await sut.save(Entry(tripID: UUID(), text: "Norway"))
+
+        #expect(await updates.next()?.count == 2)
     }
 }

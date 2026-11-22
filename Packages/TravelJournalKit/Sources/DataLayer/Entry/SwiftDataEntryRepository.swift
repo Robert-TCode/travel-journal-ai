@@ -6,19 +6,11 @@ import SwiftData
 /// instead of watching the store for changes made elsewhere.
 public actor SwiftDataEntryRepository: EntryRepository {
     private let context: ModelContext
-    private var observers: [UUID: (tripID: UUID, continuation: AsyncStream<[Entry]>.Continuation)] = [:]
+    /// A nil trip ID observes every trip.
+    private var observers: [UUID: (tripID: UUID?, continuation: AsyncStream<[Entry]>.Continuation)] = [:]
 
     init(container: ModelContainer) {
         context = ModelContext(container)
-    }
-
-    public static func onDisk() throws -> SwiftDataEntryRepository {
-        SwiftDataEntryRepository(container: try ModelContainer(for: EntryRecord.self))
-    }
-
-    static func inMemory() throws -> SwiftDataEntryRepository {
-        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-        return SwiftDataEntryRepository(container: try ModelContainer(for: EntryRecord.self, configurations: configuration))
     }
 
     public func save(_ entry: Entry) throws {
@@ -32,13 +24,20 @@ public actor SwiftDataEntryRepository: EntryRepository {
         }
         try context.save()
 
-        let snapshot = (try? entries(in: entry.tripID)) ?? []
-        for observer in observers.values where observer.tripID == entry.tripID {
-            observer.continuation.yield(snapshot)
+        for observer in observers.values where observer.tripID == nil || observer.tripID == entry.tripID {
+            observer.continuation.yield((try? entries(in: observer.tripID)) ?? [])
         }
     }
 
     public func entryUpdates(tripID: UUID) -> AsyncStream<[Entry]> {
+        updates(tripID: tripID)
+    }
+
+    public func allEntryUpdates() -> AsyncStream<[Entry]> {
+        updates(tripID: nil)
+    }
+
+    private func updates(tripID: UUID?) -> AsyncStream<[Entry]> {
         // Only the latest list matters: a slow consumer skips intermediate snapshots instead of queueing them.
         let (stream, continuation) = AsyncStream.makeStream(of: [Entry].self, bufferingPolicy: .bufferingNewest(1))
         let observerID = UUID()
@@ -59,11 +58,11 @@ public actor SwiftDataEntryRepository: EntryRepository {
         return try context.fetch(descriptor).map(\.entry)
     }
 
-    private func entries(in tripID: UUID) throws -> [Entry] {
-        let descriptor = FetchDescriptor<EntryRecord>(
-            predicate: #Predicate { $0.tripID == tripID },
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
+    private func entries(in tripID: UUID?) throws -> [Entry] {
+        var descriptor = FetchDescriptor<EntryRecord>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        if let tripID {
+            descriptor.predicate = #Predicate { $0.tripID == tripID }
+        }
         return try context.fetch(descriptor).map(\.entry)
     }
 
