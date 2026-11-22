@@ -2,9 +2,11 @@ import CoreLocation
 import Domain
 import MapKit
 
-/// Location from CoreLocation ("when in use"), place name from MapKit reverse geocoding.
+/// Location from CoreLocation ("when in use"), place name from MapKit reverse geocoding,
+/// weather and day/night from Open-Meteo.
 public final class DeviceEntryContextProvider: EntryContextProvider {
     private let locationTimeout: Duration
+    private let weatherClient = OpenMeteoWeatherClient()
 
     public init(locationTimeout: Duration = .seconds(5)) {
         self.locationTimeout = locationTimeout
@@ -12,9 +14,15 @@ public final class DeviceEntryContextProvider: EntryContextProvider {
 
     public func currentContext() async -> EntryContext {
         guard let location = await currentLocation() else { return .empty }
+        let coordinate = Coordinate(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+        async let placeName = placeName(for: location)
+        async let weather = weatherClient.currentWeather(at: coordinate)
+        let reading = await weather
         return EntryContext(
-            coordinate: Coordinate(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude),
-            placeName: await placeName(for: location)
+            coordinate: coordinate,
+            placeName: await placeName,
+            weather: reading?.condition,
+            isDaytime: reading?.isDaytime
         )
     }
 
