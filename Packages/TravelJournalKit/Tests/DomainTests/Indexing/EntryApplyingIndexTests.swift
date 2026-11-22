@@ -28,6 +28,12 @@ struct EntryApplyingIndexTests {
         #expect(indexed.tags == ["hiking", "view", "amazed"])
     }
 
+    @Test func normalizesTagsSoSearchTreatsThemAsOne() {
+        let indexed = entry.applying(EntryIndex(tags: ["Narita", " narita ", "Lost Luggage", "", "  "], mood: nil))
+
+        #expect(indexed.tags == ["narita", "lost luggage"])
+    }
+
     @Test func neverTouchesTheText() {
         #expect(entry.applying(EntryIndex(tags: ["x"], mood: .happy)).text == entry.text)
     }
