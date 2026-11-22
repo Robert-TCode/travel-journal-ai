@@ -5,14 +5,13 @@ import FoundationModels
 /// guide descriptions are instructions, and properties are generated top to bottom.
 @Generable
 struct GeneratedEntryIndex {
-    // Tags first: describing what happened helps the model pick a mood that matches it.
     @Guide(
-        description: "Short lowercase tags that help find this memory later: activities, food, drinks, places, things. One or two words each.",
+        description: "Specific words from the note or its context that someone would search for later, like 'ramen', 'sunset', 'museum'. Never generic categories such as 'food' or 'activities'.",
         .maximumCount(5)
     )
     var tags: [String]
 
-    @Guide(description: "The writer's mood, only if the note clearly expresses one. Leave empty otherwise; never guess.")
+    @Guide(description: "Only if the writer states or clearly shows a feeling. Most notes have no mood: leave it empty for plain facts like schedules, directions or lists.")
     var mood: GeneratedMood?
 }
 

@@ -30,7 +30,8 @@ struct GeneratedEntryIndexTests {
 
         #expect(json.contains("tags"))
         #expect(json.contains("mood"))
-        #expect(json.contains("never guess"))
+        #expect(json.contains("Most notes have no mood"))
+        #expect(json.contains("Never generic categories"))
         #expect(json.contains("nostalgic"))
     }
 }
