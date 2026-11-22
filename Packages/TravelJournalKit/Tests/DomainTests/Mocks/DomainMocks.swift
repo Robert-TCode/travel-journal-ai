@@ -4,10 +4,10 @@ import Synchronization
 
 struct MockIndexerError: Error {}
 
-/// Returns a fixed index (or fails) and records the order and overlap of calls.
 final class MockEntryIndexer: EntryIndexer {
     private let result: Result<EntryIndex, MockIndexerError>
     private let state = Mutex<(order: [String], inFlight: Int, maxInFlight: Int)>(([], 0, 0))
+    private let received = Mutex<[Entry]>([])
 
     init(returning result: Result<EntryIndex, MockIndexerError>) {
         self.result = result
@@ -16,7 +16,10 @@ final class MockEntryIndexer: EntryIndexer {
     var indexedTexts: [String] { state.withLock { $0.order } }
     var maxConcurrentCalls: Int { state.withLock { $0.maxInFlight } }
 
+    var receivedEntries: [Entry] { received.withLock { $0 } }
+
     func index(_ entry: Entry) async throws -> EntryIndex {
+        received.withLock { $0.append(entry) }
         state.withLock {
             $0.order.append(entry.text)
             $0.inFlight += 1
@@ -29,7 +32,6 @@ final class MockEntryIndexer: EntryIndexer {
     }
 }
 
-/// Keeps the last saved version of each entry, like a real store would.
 final class SpyEntryRepository: EntryRepository {
     private let stored = Mutex<[Entry]>([])
 
@@ -44,5 +46,13 @@ final class SpyEntryRepository: EntryRepository {
 
     func entryUpdates(tripID: UUID) -> AsyncStream<[Entry]> {
         AsyncStream { $0.finish() }
+    }
+}
+
+struct StubContextProvider: EntryContextProvider {
+    var context: EntryContext = .empty
+
+    func currentContext() async -> EntryContext {
+        context
     }
 }

@@ -1,36 +1,48 @@
-/// Indexes saved entries one at a time, in the order they were saved, and stores the result.
-///
-/// Lives at app level (created in the composition root), so indexing outlives the screen that saved the entry.
-/// Serial on purpose: the on-device model is a single shared resource, so parallel requests gain no speed
-/// and only add memory pressure.
+/// Lives at app level, so indexing outlives the screen that saved the entry.
+/// Context is gathered as soon as an entry arrives, so it describes the moment of capture
+/// even when the entry waits behind others for the model.
+/// Indexing is serial on purpose: the on-device model is a single shared resource, so parallel
+/// requests gain no speed and only add memory pressure.
 public actor IndexingCoordinator: IndexingQueue {
+    private let contextProvider: any EntryContextProvider
     private let indexer: any EntryIndexer
     private let repository: any EntryRepository
-    private var queue: [Entry] = []
+    private var queue: [Task<Entry, Never>] = []
     private var drainTask: Task<Void, Never>?
 
-    public init(indexer: any EntryIndexer, repository: any EntryRepository) {
+    public init(
+        contextProvider: any EntryContextProvider,
+        indexer: any EntryIndexer,
+        repository: any EntryRepository
+    ) {
+        self.contextProvider = contextProvider
         self.indexer = indexer
         self.repository = repository
     }
 
     public func enqueue(_ entry: Entry) {
-        queue.append(entry)
+        queue.append(Task { await addContext(to: entry) })
         if drainTask == nil {
             drainTask = Task { await drain() }
         }
     }
 
-    /// Returns once the queue is empty. Used by tests; the app never needs to wait.
+    /// For tests; the app never needs to wait.
     public func waitUntilIdle() async {
         while let drainTask {
             await drainTask.value
         }
     }
 
+    private func addContext(to entry: Entry) async -> Entry {
+        let withContext = entry.applying(await contextProvider.currentContext())
+        try? await repository.save(withContext)
+        return withContext
+    }
+
     private func drain() async {
         while !queue.isEmpty {
-            let entry = queue.removeFirst()
+            let entry = await queue.removeFirst().value
             await index(entry)
         }
         drainTask = nil

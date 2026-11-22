@@ -1,7 +1,6 @@
 import SwiftUI
 import Domain
 
-/// A saved entry with its tags shown discreetly. Tags appear on their own once indexing finishes.
 struct RecentEntryRow: View {
     let entry: Entry
 
@@ -9,6 +8,11 @@ struct RecentEntryRow: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(entry.text)
                 .lineLimit(3)
+            if let placeName = entry.placeName {
+                Label(placeName, systemImage: "mappin")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             metadata
         }
         .padding(.vertical, 2)
@@ -45,7 +49,7 @@ struct RecentEntryRow: View {
 #Preview {
     List {
         RecentEntryRow(entry: Entry(tripID: UUID(), text: "Walked 20k steps today, my feet hurt.", tags: ["walking", "steps", "tired"], indexingStatus: .done))
-        RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream at Owakudani."))
+        RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream at Owakudani.", placeName: "Hakone, Kanagawa"))
         RecentEntryRow(entry: Entry(tripID: UUID(), text: "Bus leaves at 9.", indexingStatus: .failed))
     }
 }

@@ -15,8 +15,11 @@ struct TravelJournalApp: App {
     init() {
         let repository = InMemoryEntryRepository()
         self.repository = repository
-        // App-level, so indexing keeps running after the user leaves the Capture screen.
-        self.indexingCoordinator = IndexingCoordinator(indexer: FoundationModelsEntryIndexer(), repository: repository)
+        self.indexingCoordinator = IndexingCoordinator(
+            contextProvider: DeviceEntryContextProvider(),
+            indexer: FoundationModelsEntryIndexer(),
+            repository: repository
+        )
     }
 
     var body: some Scene {
