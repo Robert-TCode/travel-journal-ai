@@ -12,13 +12,16 @@ let package = Package(
         .library(name: "DataLayer", targets: ["DataLayer"]),
         .library(name: "Presentation", targets: ["Presentation"]),
     ],
+    dependencies: [
+        .package(path: "../DesignSystem"),
+    ],
     targets: [
         // Pure Swift. No Apple frameworks beyond Foundation (no FoundationModels, PhotoKit, MapKit...).
         .target(name: "Domain"),
         // Repositories and data sources: persistence, location, weather, Spotlight, language models.
         .target(name: "DataLayer", dependencies: ["Domain"]),
         // SwiftUI views and view models. Knows Domain only.
-        .target(name: "Presentation", dependencies: ["Domain"]),
+        .target(name: "Presentation", dependencies: ["Domain", .product(name: "DesignSystem", package: "DesignSystem")]),
 
         .testTarget(name: "DomainTests", dependencies: ["Domain"]),
         .testTarget(name: "DataLayerTests", dependencies: ["DataLayer"]),
