@@ -17,9 +17,10 @@ struct TravelJournalApp: App {
             fatalError("Couldn't open the journal store: \(error)")
         }
         let context = DeviceEntryContextProvider()
+        let media = FileMediaStore()
         indexingCoordinator = IndexingCoordinator(
             contextProvider: context,
-            indexer: FoundationModelsEntryIndexer(),
+            indexer: FoundationModelsEntryIndexer(media: media),
             repository: store.entries
         )
         dependencies = AppDependencies(
@@ -28,7 +29,8 @@ struct TravelJournalApp: App {
             trips: store.trips,
             tripLifecycle: TripLifecycle(repository: store.trips),
             indexingQueue: indexingCoordinator,
-            context: context
+            context: context,
+            media: media
         )
     }
 

@@ -1,6 +1,13 @@
 import Domain
 import Foundation
 import Observation
+import UIKit
+
+struct PendingPhoto: Identifiable {
+    let id = UUID()
+    let data: Data
+    let thumbnail: UIImage?
+}
 
 @MainActor @Observable
 final class CaptureViewModel {
@@ -20,6 +27,7 @@ final class CaptureViewModel {
             if !noteText.isEmpty { didSave = false }
         }
     }
+    private(set) var pendingPhotos: [PendingPhoto] = []
     private(set) var isSaving = false
     private(set) var didSave = false
     private(set) var saveFailed = false
@@ -33,7 +41,25 @@ final class CaptureViewModel {
     }
 
     var canSave: Bool {
-        ongoingTrip != nil && !isSaving && !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ongoingTrip != nil && !isSaving && (hasText || !pendingPhotos.isEmpty)
+    }
+
+    private var hasText: Bool {
+        !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    func photoURL(for entry: Entry) -> URL? {
+        entry.photoNames.first.map(dependencies.media.photoURL(named:))
+    }
+
+    func addPhoto(_ data: Data) async {
+        let thumbnail = await UIImage(data: data)?.byPreparingThumbnail(ofSize: CGSize(width: 240, height: 240))
+        pendingPhotos.append(PendingPhoto(data: data, thumbnail: thumbnail))
+        didSave = false
+    }
+
+    func removePhoto(_ photo: PendingPhoto) {
+        pendingPhotos.removeAll { $0.id == photo.id }
     }
 
     /// 1 on the day the trip started.
@@ -101,14 +127,20 @@ final class CaptureViewModel {
         saveFailed = false
         defer { isSaving = false }
 
-        let entry = Entry(tripID: tripID, text: noteText)
+        let entry: Entry
         do {
+            var photoNames: [String] = []
+            for photo in pendingPhotos {
+                photoNames.append(try await dependencies.media.storePhoto(photo.data))
+            }
+            entry = Entry(tripID: tripID, text: noteText, photoNames: photoNames)
             try await dependencies.entries.save(entry)
         } catch {
             saveFailed = true
             return
         }
         noteText = ""
+        pendingPhotos = []
         didSave = true
         await dependencies.indexingQueue.enqueue(entry)
     }

@@ -17,7 +17,8 @@ struct TripsViewModelTests {
             trips: trips,
             tripLifecycle: TripLifecycle(repository: trips),
             indexingQueue: MockIndexingQueue(),
-            context: StubContextProvider()
+            context: StubContextProvider(),
+            media: MockMediaStore()
         ))
         let observingTrips = Task { await sut.observeTrips() }
         let observingEntries = Task { await sut.observeEntries() }

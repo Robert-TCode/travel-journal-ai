@@ -18,7 +18,7 @@ struct FoundationModelsEntryIndexerIntegrationTests {
         Entry(tripID: UUID(), text: "Bus leaves at 9 from the main station."),
     ])
     func producesAValidIndex(for entry: Entry) async throws {
-        let index = try await FoundationModelsEntryIndexer().index(entry)
+        let index = try await FoundationModelsEntryIndexer(media: FileMediaStore()).index(entry)
 
         print("INDEX>> \(entry.text) -> tags: \(index.tags), mood: \(index.mood.map(\.rawValue) ?? "none")")
         #expect(!index.tags.isEmpty)

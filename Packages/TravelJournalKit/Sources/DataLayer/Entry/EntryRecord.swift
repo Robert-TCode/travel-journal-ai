@@ -8,6 +8,7 @@ final class EntryRecord {
     @Attribute(.unique) var id: UUID
     var tripID: UUID
     var text: String
+    var photoNames: [String] = []
     var createdAt: Date
     var latitude: Double?
     var longitude: Double?
@@ -29,6 +30,7 @@ final class EntryRecord {
 
     func update(from entry: Entry) {
         text = entry.text
+        photoNames = entry.photoNames
         latitude = entry.coordinate?.latitude
         longitude = entry.coordinate?.longitude
         placeName = entry.placeName
@@ -43,6 +45,7 @@ final class EntryRecord {
             id: id,
             tripID: tripID,
             text: text,
+            photoNames: photoNames,
             createdAt: createdAt,
             coordinate: latitude.flatMap { latitude in
                 longitude.map { Coordinate(latitude: latitude, longitude: $0) }

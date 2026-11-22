@@ -1,14 +1,27 @@
 import SwiftUI
+import Foundation
 import Domain
 
 struct RecentEntryRow: View {
     let entry: Entry
+    var photoURL: URL?
 
     var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            if let photoURL {
+                PhotoThumbnail(url: photoURL)
+            }
+            details
+        }
+    }
+
+    private var details: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(entry.text)
-                .font(.callout)
-                .lineLimit(3)
+            if !entry.text.isEmpty {
+                Text(entry.text)
+                    .font(.callout)
+                    .lineLimit(3)
+            }
             if let placeName = entry.placeName {
                 Label(placeName, systemImage: "mappin")
                     .font(.caption)

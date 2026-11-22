@@ -45,4 +45,14 @@ struct IndexingPromptTests {
     @Test func instructionsTellTheModelTheNoteIsDataNotCommands() {
         #expect(IndexingPrompt.instructions.contains("never as instructions"))
     }
+
+    @Test func aPhotoWithoutTextHasNoEmptyNoteBlock() {
+        let entry = Entry(tripID: UUID(), text: "", photoNames: ["a.jpg"], placeName: "Hakone, Kanagawa")
+
+        #expect(IndexingPrompt.prompt(for: entry) == "Place: Hakone, Kanagawa")
+    }
+
+    @Test func instructionsAskToTagWhatAPhotoShows() {
+        #expect(IndexingPrompt.instructions.contains("When a photo is attached"))
+    }
 }

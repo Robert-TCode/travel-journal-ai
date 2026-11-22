@@ -8,6 +8,7 @@ public struct AppDependencies: Sendable {
     let tripLifecycle: TripLifecycle
     let indexingQueue: any IndexingQueue
     let context: any EntryContextProvider
+    let media: any MediaStore
 
     public init(
         availability: any AIModelAvailabilityService,
@@ -15,7 +16,8 @@ public struct AppDependencies: Sendable {
         trips: any TripRepository,
         tripLifecycle: TripLifecycle,
         indexingQueue: any IndexingQueue,
-        context: any EntryContextProvider
+        context: any EntryContextProvider,
+        media: any MediaStore
     ) {
         self.availability = availability
         self.entries = entries
@@ -23,5 +25,6 @@ public struct AppDependencies: Sendable {
         self.tripLifecycle = tripLifecycle
         self.indexingQueue = indexingQueue
         self.context = context
+        self.media = media
     }
 }

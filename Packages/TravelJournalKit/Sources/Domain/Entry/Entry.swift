@@ -5,6 +5,8 @@ public struct Entry: Sendable, Equatable, Identifiable {
     public let id: UUID
     public let tripID: UUID
     public var text: String
+    /// File names in the `MediaStore`, in the order the user added them.
+    public var photoNames: [String]
     public let createdAt: Date
 
     public var coordinate: Coordinate?
@@ -20,6 +22,7 @@ public struct Entry: Sendable, Equatable, Identifiable {
         id: UUID = UUID(),
         tripID: UUID,
         text: String,
+        photoNames: [String] = [],
         createdAt: Date = .now,
         coordinate: Coordinate? = nil,
         placeName: String? = nil,
@@ -31,6 +34,7 @@ public struct Entry: Sendable, Equatable, Identifiable {
         self.id = id
         self.tripID = tripID
         self.text = text
+        self.photoNames = photoNames
         self.createdAt = createdAt
         self.coordinate = coordinate
         self.placeName = placeName

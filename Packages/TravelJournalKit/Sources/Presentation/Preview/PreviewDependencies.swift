@@ -13,7 +13,8 @@ extension AppDependencies {
             trips: tripRepository,
             tripLifecycle: TripLifecycle(repository: tripRepository),
             indexingQueue: PreviewIndexingQueue(),
-            context: PreviewContextProvider()
+            context: PreviewContextProvider(),
+            media: PreviewMediaStore()
         )
     }
 }
@@ -21,5 +22,13 @@ extension AppDependencies {
 struct PreviewContextProvider: EntryContextProvider {
     func currentContext() async -> EntryContext {
         EntryContext(placeName: "Hakone, Kanagawa")
+    }
+}
+
+struct PreviewMediaStore: MediaStore {
+    func storePhoto(_ data: Data) async throws -> String { "preview.jpg" }
+
+    func photoURL(named name: String) -> URL {
+        URL.temporaryDirectory.appending(path: name)
     }
 }

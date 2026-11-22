@@ -216,6 +216,70 @@ struct CaptureViewModelSaveTests {
 }
 
 @MainActor
+@Suite("CaptureViewModel photos")
+struct CaptureViewModelPhotoTests {
+    @Test(.timeLimit(.minutes(1)))
+    func aPhotoAloneCanBeSaved() async {
+        let repository = MockEntryRepository()
+        let media = MockMediaStore()
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(entries: repository, media: media)
+        defer { observing.cancel() }
+
+        await sut.addPhoto(Data("photo".utf8))
+        #expect(sut.canSave)
+        await sut.save()
+
+        #expect(media.storedPhotos == [Data("photo".utf8)])
+        #expect(repository.savedEntries.first?.photoNames == ["photo-1.jpg"])
+        #expect(repository.savedEntries.first?.text == "")
+        #expect(sut.pendingPhotos.isEmpty)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func keepsPhotosInOrderWithTheCaption() async {
+        let repository = MockEntryRepository()
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(entries: repository)
+        defer { observing.cancel() }
+
+        await sut.addPhoto(Data("first".utf8))
+        await sut.addPhoto(Data("second".utf8))
+        sut.noteText = "Black ice cream"
+        await sut.save()
+
+        #expect(repository.savedEntries.first?.photoNames == ["photo-1.jpg", "photo-2.jpg"])
+        #expect(repository.savedEntries.first?.text == "Black ice cream")
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func removedPhotosAreNotSaved() async {
+        let media = MockMediaStore()
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(media: media)
+        defer { observing.cancel() }
+        await sut.addPhoto(Data("keep".utf8))
+        await sut.addPhoto(Data("drop".utf8))
+
+        sut.removePhoto(sut.pendingPhotos[1])
+        await sut.save()
+
+        #expect(media.storedPhotos == [Data("keep".utf8)])
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func keepsThePhotosWhenStoringFails() async {
+        let repository = MockEntryRepository()
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(entries: repository, media: MockMediaStore(failing: true))
+        defer { observing.cancel() }
+        await sut.addPhoto(Data("photo".utf8))
+
+        await sut.save()
+
+        #expect(sut.saveFailed)
+        #expect(sut.pendingPhotos.count == 1)
+        #expect(repository.savedEntries.isEmpty)
+    }
+}
+
+@MainActor
 @Suite("CaptureViewModel recent entries")
 struct CaptureViewModelRecentEntriesTests {
     @Test(.timeLimit(.minutes(1)))
@@ -244,7 +308,8 @@ private func makeSUT(
     entries: any EntryRepository = MockEntryRepository(),
     trips: FakeTripRepository = FakeTripRepository(),
     indexingQueue: any IndexingQueue = MockIndexingQueue(),
-    context: any EntryContextProvider = StubContextProvider()
+    context: any EntryContextProvider = StubContextProvider(),
+    media: any MediaStore = MockMediaStore()
 ) -> CaptureViewModel {
     CaptureViewModel(dependencies: AppDependencies(
         availability: availability,
@@ -252,7 +317,8 @@ private func makeSUT(
         trips: trips,
         tripLifecycle: TripLifecycle(repository: trips),
         indexingQueue: indexingQueue,
-        context: context
+        context: context,
+        media: media
     ))
 }
 
@@ -260,10 +326,11 @@ private func makeSUT(
 @MainActor
 private func makeSUTWithOngoingTrip(
     entries: any EntryRepository = MockEntryRepository(),
-    indexingQueue: any IndexingQueue = MockIndexingQueue()
+    indexingQueue: any IndexingQueue = MockIndexingQueue(),
+    media: any MediaStore = MockMediaStore()
 ) async -> (CaptureViewModel, Trip, Task<Void, Never>) {
     let trip = Trip(name: "Japan")
-    let sut = makeSUT(entries: entries, trips: FakeTripRepository(trips: [trip]), indexingQueue: indexingQueue)
+    let sut = makeSUT(entries: entries, trips: FakeTripRepository(trips: [trip]), indexingQueue: indexingQueue, media: media)
     var ongoing = Changes { sut.ongoingTrip }
     _ = await ongoing.next()
     let observing = Task { await sut.observeTrips() }

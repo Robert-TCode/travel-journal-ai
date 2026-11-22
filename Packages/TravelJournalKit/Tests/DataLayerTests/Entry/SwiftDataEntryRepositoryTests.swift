@@ -40,6 +40,7 @@ struct SwiftDataEntryRepositoryTests {
         let entry = Entry(
             tripID: tripID,
             text: "Black ice cream",
+            photoNames: ["a.heic", "b.jpg"],
             coordinate: Coordinate(latitude: 35.24, longitude: 139.02),
             placeName: "Hakone, Kanagawa",
             weather: .clear,
