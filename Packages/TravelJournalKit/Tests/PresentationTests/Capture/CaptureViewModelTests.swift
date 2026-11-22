@@ -17,8 +17,8 @@ struct CaptureViewModelAvailabilityTests {
     func followsAvailabilityChanges() async {
         let service = MockAvailabilityService()
         let sut = makeSUT(availabilityService: service)
-        var changes = AvailabilityChanges(of: sut)
-        #expect(await changes.next() == nil)
+        var changes = Changes { sut.availability }
+        #expect(await changes.next() == .some(nil))
 
         let observing = Task { await sut.observeAvailability() }
         defer { observing.cancel() }
@@ -34,7 +34,7 @@ struct CaptureViewModelAvailabilityTests {
     func stopsListeningWhenObservationIsCancelled() async {
         let service = MockAvailabilityService()
         let sut = makeSUT(availabilityService: service)
-        var changes = AvailabilityChanges(of: sut)
+        var changes = Changes { sut.availability }
         _ = await changes.next()
 
         let observing = Task { await sut.observeAvailability() }
@@ -142,6 +142,29 @@ struct CaptureViewModelSaveTests {
 }
 
 @MainActor
+@Suite("CaptureViewModel recent entries")
+struct CaptureViewModelRecentEntriesTests {
+    @Test(.timeLimit(.minutes(1)))
+    func showsEntriesAndTheirTagsAsTheyChange() async {
+        let repository = MockEntryRepository()
+        let sut = makeSUT(repository: repository)
+        var changes = Changes { sut.recentEntries }
+        #expect(await changes.next() == [])
+
+        let observing = Task { await sut.observeRecentEntries() }
+        defer { observing.cancel() }
+
+        let saved = Entry(tripID: UUID(), text: "Walked 20k steps.")
+        repository.send([saved])
+        #expect(await changes.next() == [saved])
+
+        let indexed = saved.applying(EntryIndex(tags: ["walking"], mood: .tired))
+        repository.send([indexed])
+        #expect(await changes.next()?.first?.tags == ["walking", "tired"])
+    }
+}
+
+@MainActor
 private func makeSUT(
     availabilityService: any AIModelAvailabilityService = MockAvailabilityService(),
     repository: any EntryRepository = MockEntryRepository(),
@@ -156,18 +179,18 @@ private func makeSUT(
     )
 }
 
-/// Waits for the view model's `availability` to change instead of sleeping.
+/// Waits for a view model property to change instead of sleeping.
 /// `Observations` emits the current value first, then each new value.
-private struct AvailabilityChanges {
-    private var iterator: Observations<AIModelAvailability?, Never>.Iterator
+private struct Changes<Value: Sendable> {
+    private var iterator: Observations<Value, Never>.Iterator
 
     @MainActor
-    init(of viewModel: CaptureViewModel) {
-        iterator = Observations { viewModel.availability }.makeAsyncIterator()
+    init(_ observe: @escaping @MainActor @Sendable () -> Value) {
+        iterator = Observations(observe).makeAsyncIterator()
     }
 
     /// Runs on the caller's actor (`#isolation`), so the iterator never leaves the test's actor.
-    mutating func next(isolation: isolated (any Actor)? = #isolation) async -> AIModelAvailability? {
-        await iterator.next(isolation: isolation) ?? nil
+    mutating func next(isolation: isolated (any Actor)? = #isolation) async -> Value? {
+        await iterator.next(isolation: isolation)
     }
 }

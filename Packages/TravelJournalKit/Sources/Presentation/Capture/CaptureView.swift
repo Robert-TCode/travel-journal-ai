@@ -25,6 +25,7 @@ struct CaptureView: View {
                 .navigationTitle("Capture")
         }
         .task { await viewModel.observeAvailability() }
+        .task { await viewModel.observeRecentEntries() }
     }
 
     /// Saving never depends on Apple Intelligence; availability only decides whether smart tags will follow.
@@ -60,6 +61,14 @@ struct CaptureView: View {
                     Label("Saved", systemImage: "checkmark.circle")
                 } else if viewModel.saveFailed {
                     Label("Couldn't save. Try again.", systemImage: "exclamationmark.triangle")
+                }
+            }
+
+            if !viewModel.recentEntries.isEmpty {
+                Section("Recent") {
+                    ForEach(viewModel.recentEntries) { entry in
+                        RecentEntryRow(entry: entry)
+                    }
                 }
             }
         }

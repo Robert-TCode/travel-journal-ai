@@ -10,6 +10,8 @@ final class CaptureViewModel {
     private let tripID: UUID
 
     private(set) var availability: AIModelAvailability?
+    /// The current trip's entries, newest first. Tags appear here when indexing finishes.
+    private(set) var recentEntries: [Entry] = []
 
     var noteText = "" {
         didSet {
@@ -41,6 +43,13 @@ final class CaptureViewModel {
     func observeAvailability() async {
         for await availability in availabilityService.availabilityUpdates() {
             self.availability = availability
+        }
+    }
+
+    /// Runs until the calling task is cancelled, like `observeAvailability()`.
+    func observeRecentEntries() async {
+        for await entries in await repository.entryUpdates(tripID: tripID) {
+            recentEntries = entries
         }
     }
 
