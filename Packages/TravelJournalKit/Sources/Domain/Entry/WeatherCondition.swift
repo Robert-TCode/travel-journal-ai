@@ -1,5 +1,5 @@
 public enum WeatherCondition: String, Sendable, Equatable, CaseIterable {
-    case sunny
+    case clear
     case cloudy
     case rainy
     case snowy

@@ -22,6 +22,6 @@ struct EntryTests {
     }
 
     @Test func weatherRawValuesAreStableTags() {
-        #expect(WeatherCondition.allCases.map(\.rawValue) == ["sunny", "cloudy", "rainy", "snowy", "windy", "foggy", "stormy"])
+        #expect(WeatherCondition.allCases.map(\.rawValue) == ["clear", "cloudy", "rainy", "snowy", "windy", "foggy", "stormy"])
     }
 }
