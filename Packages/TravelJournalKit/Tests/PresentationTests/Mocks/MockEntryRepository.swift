@@ -1,15 +1,27 @@
 import Domain
+import Foundation
 import Synchronization
 
 struct MockRepositoryError: Error {}
 
-/// Records saved entries; can be told to fail.
+/// Records saved entries; can be told to fail. The test pushes entry lists with `send(_:)`.
 final class MockEntryRepository: EntryRepository {
     private let shouldFail: Bool
     private let saved = Mutex<[Entry]>([])
+    private let stream: AsyncStream<[Entry]>
+    private let continuation: AsyncStream<[Entry]>.Continuation
 
     init(failing shouldFail: Bool = false) {
         self.shouldFail = shouldFail
+        (stream, continuation) = AsyncStream.makeStream()
+    }
+
+    func send(_ entries: [Entry]) {
+        continuation.yield(entries)
+    }
+
+    func entryUpdates(tripID: UUID) -> AsyncStream<[Entry]> {
+        stream
     }
 
     var savedEntries: [Entry] { saved.withLock { $0 } }

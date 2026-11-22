@@ -1,4 +1,5 @@
 import Domain
+import Foundation
 import Synchronization
 
 struct MockIndexerError: Error {}
@@ -39,5 +40,9 @@ final class SpyEntryRepository: EntryRepository {
             entries.removeAll { $0.id == entry.id }
             entries.append(entry)
         }
+    }
+
+    func entryUpdates(tripID: UUID) -> AsyncStream<[Entry]> {
+        AsyncStream { $0.finish() }
     }
 }
