@@ -1,7 +1,6 @@
 import Domain
 import Synchronization
 
-/// Records what Capture handed off for indexing.
 final class MockIndexingQueue: IndexingQueue {
     private let enqueued = Mutex<[Entry]>([])
 

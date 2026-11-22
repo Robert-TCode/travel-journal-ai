@@ -7,13 +7,12 @@ public struct Entry: Sendable, Equatable, Identifiable {
     public var text: String
     public let createdAt: Date
 
-    // Deterministic metadata, captured by code on a best-effort basis (nil when unavailable).
     public var coordinate: Coordinate?
     public var placeName: String?
     public var weather: WeatherCondition?
     public var isDaytime: Bool?
 
-    // Added by AI indexing after save (mood included, from a fixed vocabulary). Editable by the user.
+    // The mood is stored here as one of the tags.
     public var tags: [String]
     public var indexingStatus: IndexingStatus
 

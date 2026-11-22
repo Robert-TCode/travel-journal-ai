@@ -4,7 +4,6 @@ import Synchronization
 
 struct MockRepositoryError: Error {}
 
-/// Records saved entries; can be told to fail. The test pushes entry lists with `send(_:)`.
 final class MockEntryRepository: EntryRepository {
     private let shouldFail: Bool
     private let saved = Mutex<[Entry]>([])

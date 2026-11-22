@@ -1,4 +1,4 @@
-/// Accepts saved entries for silent indexing. Callers hand off and move on; they never wait for the model.
+/// Callers hand off and move on; they never wait for the model.
 public protocol IndexingQueue: Sendable {
     func enqueue(_ entry: Entry) async
 }

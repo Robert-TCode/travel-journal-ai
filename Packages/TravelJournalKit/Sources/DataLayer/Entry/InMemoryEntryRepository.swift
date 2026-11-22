@@ -1,7 +1,7 @@
 import Domain
 import Foundation
 
-/// Temporary store until SwiftData persistence lands. Entries live only while the app runs.
+/// Temporary until SwiftData: entries live only while the app runs.
 public actor InMemoryEntryRepository: EntryRepository {
     private var entries: [Entry.ID: Entry] = [:]
     private var observers: [UUID: (tripID: UUID, continuation: AsyncStream<[Entry]>.Continuation)] = [:]

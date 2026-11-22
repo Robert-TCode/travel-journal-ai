@@ -10,12 +10,10 @@ final class CaptureViewModel {
     private let tripID: UUID
 
     private(set) var availability: AIModelAvailability?
-    /// The current trip's entries, newest first. Tags appear here when indexing finishes.
     private(set) var recentEntries: [Entry] = []
 
     var noteText = "" {
         didSet {
-            // A new note starts: the confirmation belongs to the previous one.
             if !noteText.isEmpty { didSave = false }
         }
     }
@@ -46,15 +44,13 @@ final class CaptureViewModel {
         }
     }
 
-    /// Runs until the calling task is cancelled, like `observeAvailability()`.
     func observeRecentEntries() async {
         for await entries in await repository.entryUpdates(tripID: tripID) {
             recentEntries = entries
         }
     }
 
-    /// Stores the note verbatim, then hands it to the app-level indexing queue.
-    /// No model involved here: the screen never waits for indexing, and may disappear while it runs.
+    /// The screen never waits for indexing, and may disappear while it runs.
     func save() async {
         guard canSave else { return }
         isSaving = true

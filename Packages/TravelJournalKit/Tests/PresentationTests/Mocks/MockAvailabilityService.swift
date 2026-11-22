@@ -1,7 +1,6 @@
 import Domain
 import Synchronization
 
-/// A service whose stream the test drives by hand: `send(_:)` emits a value whenever the test decides.
 final class MockAvailabilityService: AIModelAvailabilityService {
     private let stream: AsyncStream<AIModelAvailability>
     private let continuation: AsyncStream<AIModelAvailability>.Continuation
@@ -11,7 +10,6 @@ final class MockAvailabilityService: AIModelAvailabilityService {
         (stream, continuation) = AsyncStream.makeStream()
     }
 
-    /// True once the consumer stopped listening (the stream's `onTermination` ran).
     var isTerminated: Bool { terminated.withLock { $0 } }
 
     func send(_ availability: AIModelAvailability) {

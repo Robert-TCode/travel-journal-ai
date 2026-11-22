@@ -2,8 +2,7 @@ import Domain
 import FoundationModels
 import os
 
-/// Indexes an entry with the on-device model. One fresh session per entry: entries are independent,
-/// and a shared session would grow its transcript and leak earlier notes into later answers.
+/// One fresh session per entry: a shared one would grow its transcript and leak earlier notes into later answers.
 public final class FoundationModelsEntryIndexer: EntryIndexer {
     private let model: SystemLanguageModel
     private let logger = Logger(subsystem: "TravelJournal", category: "indexing")

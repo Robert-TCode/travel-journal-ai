@@ -1,8 +1,7 @@
 import Domain
 import FoundationModels
 
-/// The schema the on-device model fills in when indexing an entry. It is part of the prompt:
-/// guide descriptions are instructions, and properties are generated top to bottom.
+/// Part of the prompt: guide descriptions are instructions, and properties are generated top to bottom.
 @Generable
 struct GeneratedEntryIndex {
     @Guide(
