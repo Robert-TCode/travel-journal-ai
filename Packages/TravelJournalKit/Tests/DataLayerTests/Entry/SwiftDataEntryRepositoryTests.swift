@@ -57,6 +57,16 @@ struct SwiftDataEntryRepositoryTests {
         #expect(await updates.next() == [entry])
     }
 
+    @Test func keepsWhyIndexingFailed() async throws {
+        let sut = try JournalStore.inMemory().entries
+        let entry = Entry(tripID: tripID, text: "Fahrt nach Hallstatt.", indexingStatus: .failed, indexingFailure: .unsupportedLanguage)
+        try await sut.save(entry)
+
+        var updates = await sut.entryUpdates(tripID: tripID).makeAsyncIterator()
+
+        #expect(await updates.next()?.first?.indexingFailure == .unsupportedLanguage)
+    }
+
     @Test func pendingEntriesAreOnlyPendingOnesOldestFirst() async throws {
         let sut = try JournalStore.inMemory().entries
         try await sut.save(Entry(tripID: tripID, text: "newer", createdAt: Date(timeIntervalSince1970: 200)))

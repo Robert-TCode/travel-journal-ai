@@ -47,6 +47,17 @@ struct EntryApplyingIndexTests {
         #expect(tagged.applying(EntryIndex(tags: ["beach"], mood: nil)).tags == ["happy", "beach"])
     }
 
+    @Test func aSuccessfulRetryClearsTheOldFailure() {
+        var failed = entry
+        failed.indexingStatus = .failed
+        failed.indexingFailure = .tooLong
+
+        let indexed = failed.applying(EntryIndex(tags: ["steps"], mood: nil))
+
+        #expect(indexed.indexingStatus == .done)
+        #expect(indexed.indexingFailure == nil)
+    }
+
     @Test func neverTouchesTheText() {
         #expect(entry.applying(EntryIndex(tags: ["x"], mood: .happy)).text == entry.text)
     }

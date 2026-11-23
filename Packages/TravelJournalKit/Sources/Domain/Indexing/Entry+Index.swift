@@ -12,6 +12,7 @@ extension Entry {
             updated.tags.append(tag)
         }
         updated.indexingStatus = .done
+        updated.indexingFailure = nil
         return updated
     }
 

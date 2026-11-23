@@ -21,6 +21,8 @@ public struct Entry: Sendable, Equatable, Identifiable {
     // The mood is stored here as one of the tags.
     public var tags: [String]
     public var indexingStatus: IndexingStatus
+    /// Set only when `indexingStatus` is `.failed`.
+    public var indexingFailure: IndexingFailure?
 
     public init(
         id: UUID = UUID(),
@@ -35,7 +37,8 @@ public struct Entry: Sendable, Equatable, Identifiable {
         weather: WeatherCondition? = nil,
         dayPhase: DayPhase? = nil,
         tags: [String] = [],
-        indexingStatus: IndexingStatus = .pending
+        indexingStatus: IndexingStatus = .pending,
+        indexingFailure: IndexingFailure? = nil
     ) {
         self.id = id
         self.tripID = tripID
@@ -50,6 +53,7 @@ public struct Entry: Sendable, Equatable, Identifiable {
         self.dayPhase = dayPhase
         self.tags = tags
         self.indexingStatus = indexingStatus
+        self.indexingFailure = indexingFailure
     }
 
     /// Where the silent, after-save indexing stands. Persisted, so pending work survives an app restart.

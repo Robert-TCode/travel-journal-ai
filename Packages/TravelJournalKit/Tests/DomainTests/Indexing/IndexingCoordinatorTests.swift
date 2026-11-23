@@ -37,7 +37,44 @@ struct IndexingCoordinatorTests {
         await sut.waitUntilIdle()
 
         #expect(repository.entries.first?.indexingStatus == .failed)
+        #expect(repository.entries.first?.indexingFailure == .unexpected)
         #expect(repository.entries.first?.text == "Some note")
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func storesWhyTheModelGaveUp() async {
+        let repository = SpyEntryRepository()
+        let sut = IndexingCoordinator(
+            contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(),
+            indexer: MockEntryIndexer(returning: .failure(IndexingError.failed(.unsupportedLanguage))),
+            repository: repository
+        )
+
+        await sut.enqueue(Entry(tripID: UUID(), text: "Fahrt nach Hallstatt."))
+        await sut.waitUntilIdle()
+
+        #expect(repository.entries.first?.indexingStatus == .failed)
+        #expect(repository.entries.first?.indexingFailure == .unsupportedLanguage)
+    }
+
+    /// A model that is downloading or busy isn't the note's fault: the entry waits for the next launch.
+    @Test(.timeLimit(.minutes(1)))
+    func aTemporaryProblemLeavesTheEntryPendingForTheNextLaunch() async throws {
+        let repository = SpyEntryRepository()
+        let sut = IndexingCoordinator(
+            contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(),
+            indexer: MockEntryIndexer(returning: .failure(IndexingError.temporarilyUnavailable)),
+            repository: repository
+        )
+
+        await sut.enqueue(Entry(tripID: UUID(), text: "Some note"))
+        await sut.waitUntilIdle()
+
+        #expect(repository.entries.first?.indexingStatus == .pending)
+        #expect(repository.entries.first?.indexingFailure == nil)
+        #expect(try await repository.pendingEntries().map(\.text) == ["Some note"])
     }
 
     @Test(.timeLimit(.minutes(1)))

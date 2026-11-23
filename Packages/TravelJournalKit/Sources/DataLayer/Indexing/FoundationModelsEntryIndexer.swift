@@ -27,11 +27,17 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
         let clock = ContinuousClock()
         let start = clock.now
 
-        let response = try await session.respond(generating: GeneratedEntryIndex.self) {
-            text
-            if let photo {
-                Attachment(photo).label("photo")
+        let response: LanguageModelSession.Response<GeneratedEntryIndex>
+        do {
+            response = try await session.respond(generating: GeneratedEntryIndex.self) {
+                text
+                if let photo {
+                    Attachment(photo).label("photo")
+                }
             }
+        } catch {
+            logger.error("index \(entry.id, privacy: .public) failed: \(String(describing: error), privacy: .public)")
+            throw IndexingError(error)
         }
 
         let elapsed = start.duration(to: clock.now)

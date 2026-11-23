@@ -5,11 +5,11 @@ import Synchronization
 struct MockIndexerError: Error {}
 
 final class MockEntryIndexer: EntryIndexer {
-    private let result: Result<EntryIndex, MockIndexerError>
+    private let result: Result<EntryIndex, any Error>
     private let state = Mutex<(order: [String], inFlight: Int, maxInFlight: Int)>(([], 0, 0))
     private let received = Mutex<[Entry]>([])
 
-    init(returning result: Result<EntryIndex, MockIndexerError>) {
+    init(returning result: Result<EntryIndex, any Error>) {
         self.result = result
     }
 

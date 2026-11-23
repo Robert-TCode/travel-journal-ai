@@ -80,8 +80,15 @@ public actor IndexingCoordinator: IndexingQueue {
         var updated = entry
         do {
             updated = entry.applying(try await indexer.index(entry))
+        } catch IndexingError.temporarilyUnavailable {
+            // Left pending: `resumePendingEntries()` tries again on the next launch.
+            return
+        } catch IndexingError.failed(let failure) {
+            updated.indexingStatus = .failed
+            updated.indexingFailure = failure
         } catch {
             updated.indexingStatus = .failed
+            updated.indexingFailure = .unexpected
         }
         // The original entry is already stored; if this write fails, it simply stays pending.
         try? await repository.save(updated)

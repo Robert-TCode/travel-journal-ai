@@ -77,7 +77,7 @@ struct RecentEntryRow: View {
         case .pending:
             StatusLabel("Tagging…", systemImage: "sparkles")
         case .failed:
-            StatusLabel("Not tagged", systemImage: "tag.slash")
+            StatusLabel(failureText, systemImage: "tag.slash")
         case .done:
             if !tags.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -86,6 +86,15 @@ struct RecentEntryRow: View {
                     }
                 }
             }
+        }
+    }
+
+    private var failureText: String {
+        switch entry.indexingFailure {
+        case .tooLong: "Too long to tag"
+        case .unsupportedLanguage: "Not tagged: only English is supported"
+        case .declined: "Not tagged automatically"
+        case .unexpected, nil: "Not tagged"
         }
     }
 
@@ -105,7 +114,7 @@ struct RecentEntryRow: View {
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "Walked 20k steps today, my feet hurt.", weather: .clear, dayPhase: .night, tags: ["walking", "steps", "tired"], indexingStatus: .done))
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream at Owakudani.", placeName: "Hakone, Kanagawa", weather: .cloudy, dayPhase: .day))
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "", audioName: "a.m4a", transcript: "Ferry to Miyajima, windy but sunny.", dayPhase: .day, tags: ["ferry"], indexingStatus: .done))
-            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Bus leaves at 9.", indexingStatus: .failed))
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Fahrt nach Hallstatt.", indexingStatus: .failed, indexingFailure: .unsupportedLanguage))
         }
         .padding()
     }
