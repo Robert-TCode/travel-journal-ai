@@ -15,6 +15,13 @@ struct EntryApplyingContextTests {
         #expect(entry.dayPhase == .night)
     }
 
+    @Test func fillsNearbyPlacesOnlyWhenThereAreNone() {
+        let context = EntryContext(nearbyPlaces: ["Bryggen", "Fish Market"])
+
+        #expect(Entry(tripID: UUID(), text: "").applying(context).nearbyPlaces == ["Bryggen", "Fish Market"])
+        #expect(Entry(tripID: UUID(), text: "", nearbyPlaces: ["Fløyen"]).applying(context).nearbyPlaces == ["Fløyen"])
+    }
+
     @Test func neverOverwritesWhatIsAlreadyThere() {
         let entry = Entry(tripID: UUID(), text: "Fish market", placeName: "Bergen")
 

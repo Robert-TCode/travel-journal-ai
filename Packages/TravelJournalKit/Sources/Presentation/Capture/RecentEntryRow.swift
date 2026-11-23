@@ -59,8 +59,8 @@ struct RecentEntryRow: View {
     private var meta: some View {
         HStack(spacing: Spacing.s) {
             Text(entry.createdAt.formatted(date: .omitted, time: .shortened))
-            if let placeName = entry.placeName {
-                Text(placeName)
+            if let place {
+                Text(place)
                     .lineLimit(1)
             }
             if let mood {
@@ -89,6 +89,12 @@ struct RecentEntryRow: View {
         }
     }
 
+    /// "Owakudani · Hakone, Kanagawa": the landmark is what the memory is about, the city is where to find it.
+    private var place: String? {
+        let parts = [entry.landmark, entry.placeName].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     private var failureText: String {
         switch entry.indexingFailure {
         case .tooLong: "Too long to tag"
@@ -112,7 +118,7 @@ struct RecentEntryRow: View {
     ScrollView {
         VStack(spacing: Spacing.s) {
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "Walked 20k steps today, my feet hurt.", weather: .clear, dayPhase: .night, tags: ["walking", "steps", "tired"], indexingStatus: .done))
-            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream at Owakudani.", placeName: "Hakone, Kanagawa", weather: .cloudy, dayPhase: .day))
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream!", placeName: "Hakone, Kanagawa", weather: .cloudy, dayPhase: .day, nearbyPlaces: ["Owakudani"], landmark: "Owakudani"))
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "", audioName: "a.m4a", transcript: "Ferry to Miyajima, windy but sunny.", dayPhase: .day, tags: ["ferry"], indexingStatus: .done))
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "Fahrt nach Hallstatt.", indexingStatus: .failed, indexingFailure: .unsupportedLanguage))
         }

@@ -6,6 +6,9 @@ extension Entry {
         updated.placeName = placeName ?? context.placeName
         updated.weather = weather ?? context.weather
         updated.dayPhase = dayPhase ?? context.dayPhase
+        if nearbyPlaces.isEmpty {
+            updated.nearbyPlaces = context.nearbyPlaces
+        }
         return updated
     }
 }

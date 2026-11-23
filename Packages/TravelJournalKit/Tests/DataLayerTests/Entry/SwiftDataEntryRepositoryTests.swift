@@ -47,6 +47,8 @@ struct SwiftDataEntryRepositoryTests {
             placeName: "Hakone, Kanagawa",
             weather: .clear,
             dayPhase: .day,
+            nearbyPlaces: ["Owakudani", "Hakone Ropeway"],
+            landmark: "Owakudani",
             tags: ["ice cream", "happy"],
             indexingStatus: .done
         )

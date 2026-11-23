@@ -3,10 +3,11 @@ import Domain
 import MapKit
 
 /// Location from CoreLocation ("when in use"), place name from MapKit reverse geocoding,
-/// weather and the sun's phase from Open-Meteo.
+/// weather and the sun's phase from Open-Meteo, nearby places from MapKit.
 public final class DeviceEntryContextProvider: EntryContextProvider {
     private let locationTimeout: Duration
     private let weatherClient = OpenMeteoWeatherClient()
+    private let nearbyPlacesClient = MapKitNearbyPlacesClient()
 
     public init(locationTimeout: Duration = .seconds(5)) {
         self.locationTimeout = locationTimeout
@@ -17,12 +18,14 @@ public final class DeviceEntryContextProvider: EntryContextProvider {
         let coordinate = Coordinate(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
         async let placeName = placeName(for: location)
         async let weather = weatherClient.currentWeather(at: coordinate)
+        async let nearbyPlaces = nearbyPlacesClient.places(around: coordinate)
         let reading = await weather
         return EntryContext(
             coordinate: coordinate,
             placeName: await placeName,
             weather: reading?.condition,
-            dayPhase: reading?.dayPhase
+            dayPhase: reading?.dayPhase,
+            nearbyPlaces: await nearbyPlaces
         )
     }
 

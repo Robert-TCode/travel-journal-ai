@@ -52,6 +52,10 @@ struct IndexingPromptTests {
         #expect(IndexingPrompt.prompt(for: entry) == "Place: Hakone, Kanagawa")
     }
 
+    @Test func instructionsSayBeingNearAPlaceIsNotEnough() {
+        #expect(IndexingPrompt.instructions.contains("being near it is not enough"))
+    }
+
     @Test func instructionsSayTravellingIsNotAMood() {
         #expect(IndexingPrompt.instructions.contains("Travelling, booking or moving somewhere is not a feeling"))
     }

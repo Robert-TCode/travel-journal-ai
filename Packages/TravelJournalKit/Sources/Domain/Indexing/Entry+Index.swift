@@ -11,6 +11,10 @@ extension Entry {
         for tag in newTags where !updated.tags.contains(tag) {
             updated.tags.append(tag)
         }
+        // Only a place that was offered: an indexer bug or a different model can't put an invented name here.
+        if let landmark = index.landmark, nearbyPlaces.contains(landmark) {
+            updated.landmark = landmark
+        }
         updated.indexingStatus = .done
         updated.indexingFailure = nil
         return updated

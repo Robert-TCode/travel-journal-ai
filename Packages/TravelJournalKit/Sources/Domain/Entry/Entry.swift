@@ -17,6 +17,11 @@ public struct Entry: Sendable, Equatable, Identifiable {
     public var placeName: String?
     public var weather: WeatherCondition?
     public var dayPhase: DayPhase?
+    /// Points of interest around the capture point, nearest first. Saved with the entry so indexing
+    /// can run later (even after a relaunch) with the places that were there at that moment.
+    public var nearbyPlaces: [String]
+    /// One of `nearbyPlaces`, chosen by indexing when the memory is clearly about it.
+    public var landmark: String?
 
     // The mood is stored here as one of the tags.
     public var tags: [String]
@@ -36,6 +41,8 @@ public struct Entry: Sendable, Equatable, Identifiable {
         placeName: String? = nil,
         weather: WeatherCondition? = nil,
         dayPhase: DayPhase? = nil,
+        nearbyPlaces: [String] = [],
+        landmark: String? = nil,
         tags: [String] = [],
         indexingStatus: IndexingStatus = .pending,
         indexingFailure: IndexingFailure? = nil
@@ -51,6 +58,8 @@ public struct Entry: Sendable, Equatable, Identifiable {
         self.placeName = placeName
         self.weather = weather
         self.dayPhase = dayPhase
+        self.nearbyPlaces = nearbyPlaces
+        self.landmark = landmark
         self.tags = tags
         self.indexingStatus = indexingStatus
         self.indexingFailure = indexingFailure

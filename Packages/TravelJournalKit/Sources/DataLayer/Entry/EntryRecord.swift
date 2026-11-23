@@ -17,6 +17,8 @@ final class EntryRecord {
     var placeName: String?
     var weather: String?
     var dayPhase: String?
+    var nearbyPlaces: [String] = []
+    var landmark: String?
     var tags: [String]
     var indexingStatus: String
     var indexingFailure: String?
@@ -41,6 +43,8 @@ final class EntryRecord {
         placeName = entry.placeName
         weather = entry.weather?.rawValue
         dayPhase = entry.dayPhase?.rawValue
+        nearbyPlaces = entry.nearbyPlaces
+        landmark = entry.landmark
         tags = entry.tags
         indexingStatus = entry.indexingStatus.rawValue
         indexingFailure = entry.indexingFailure?.rawValue
@@ -61,6 +65,8 @@ final class EntryRecord {
             placeName: placeName,
             weather: weather.flatMap(WeatherCondition.init(rawValue:)),
             dayPhase: dayPhase.flatMap(DayPhase.init(rawValue:)),
+            nearbyPlaces: nearbyPlaces,
+            landmark: landmark,
             tags: tags,
             indexingStatus: Entry.IndexingStatus(rawValue: indexingStatus) ?? .pending,
             indexingFailure: indexingFailure.flatMap(IndexingFailure.init(rawValue:))

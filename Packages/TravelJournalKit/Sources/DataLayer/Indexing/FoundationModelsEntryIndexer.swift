@@ -27,14 +27,17 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
         let clock = ContinuousClock()
         let start = clock.now
 
-        let response: LanguageModelSession.Response<GeneratedEntryIndex>
+        let response: LanguageModelSession.Response<GeneratedContent>
+        let index: EntryIndex
         do {
-            response = try await session.respond(generating: GeneratedEntryIndex.self) {
+            let schema = try IndexingSchema.schema(nearbyPlaces: entry.nearbyPlaces)
+            response = try await session.respond(schema: schema) {
                 text
                 if let photo {
                     Attachment(photo).label("photo")
                 }
             }
+            index = try IndexingSchema.index(from: response.content)
         } catch {
             logger.error("index \(entry.id, privacy: .public) failed: \(String(describing: error), privacy: .public)")
             throw IndexingError(error)
@@ -43,13 +46,14 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
         let elapsed = start.duration(to: clock.now)
         let usage = response.usage
         logger.info("""
-            index \(entry.id, privacy: .public)\(photo == nil ? "" : " with photo", privacy: .public): \
+            index \(entry.id, privacy: .public)\(photo == nil ? "" : " with photo", privacy: .public), \
+            \(entry.nearbyPlaces.count) nearby places: \
             \(elapsed.components.seconds * 1000 + elapsed.components.attoseconds / 1_000_000_000_000_000) ms, \
             input \(usage.input.totalTokenCount) tokens (\(usage.input.cachedTokenCount) cached), \
             output \(usage.output.totalTokenCount) tokens
             """)
 
-        return response.content.domainValue
+        return index
     }
 
     private static func downsampledImage(at url: URL) -> CGImage? {

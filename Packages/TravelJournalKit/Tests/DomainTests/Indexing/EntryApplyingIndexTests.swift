@@ -58,6 +58,20 @@ struct EntryApplyingIndexTests {
         #expect(indexed.indexingFailure == nil)
     }
 
+    @Test func keepsTheLandmarkWhenItWasOneOfTheNearbyPlaces() {
+        var nearOwakudani = entry
+        nearOwakudani.nearbyPlaces = ["Owakudani", "Hakone Ropeway"]
+
+        #expect(nearOwakudani.applying(EntryIndex(tags: [], mood: nil, landmark: "Owakudani")).landmark == "Owakudani")
+    }
+
+    @Test func ignoresALandmarkThatWasNeverOffered() {
+        var nearOwakudani = entry
+        nearOwakudani.nearbyPlaces = ["Owakudani"]
+
+        #expect(nearOwakudani.applying(EntryIndex(tags: [], mood: nil, landmark: "Mount Fuji")).landmark == nil)
+    }
+
     @Test func neverTouchesTheText() {
         #expect(entry.applying(EntryIndex(tags: ["x"], mood: .happy)).text == entry.text)
     }
