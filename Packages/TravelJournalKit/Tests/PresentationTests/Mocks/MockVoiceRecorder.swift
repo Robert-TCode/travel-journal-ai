@@ -3,11 +3,11 @@ import Foundation
 import Synchronization
 
 final class MockVoiceRecorder: VoiceRecorder {
-    private let startError: VoiceRecorderError?
+    private let startError: (any Error)?
     private let recording: URL?
     private let cancelled = Mutex(false)
 
-    init(startError: VoiceRecorderError? = nil, recording: URL? = URL.temporaryDirectory.appending(path: "recording.m4a")) {
+    init(startError: (any Error)? = nil, recording: URL? = URL.temporaryDirectory.appending(path: "recording.m4a")) {
         self.startError = startError
         self.recording = recording
     }

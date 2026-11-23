@@ -5,10 +5,16 @@ import Domain
 @MainActor
 public final class AudioFileVoiceRecorder: VoiceRecorder {
     private var recorder: AVAudioRecorder?
+    /// Starting waits for permission and the audio session; the sheet can be cancelled or swiped away meanwhile.
+    private var isStarting = false
+    private var cancelledWhileStarting = false
 
     public nonisolated init() {}
 
     public func start() async throws {
+        isStarting = true
+        cancelledWhileStarting = false
+        defer { isStarting = false }
         guard await AVAudioApplication.requestRecordPermission() else {
             throw VoiceRecorderError.microphoneAccessDenied
         }
@@ -16,6 +22,11 @@ public final class AudioFileVoiceRecorder: VoiceRecorder {
         try session.setCategory(.record, mode: .spokenAudio)
         // The synchronous setActive blocks the main thread long enough that the recording sheet seemed not to open.
         _ = try await session.activate(options: [])
+        // Without this, a recording cancelled mid-start would begin after its sheet is gone, with the mic left on.
+        guard !cancelledWhileStarting, !Task.isCancelled else {
+            await Self.deactivateSession()
+            throw CancellationError()
+        }
 
         let url = URL.temporaryDirectory.appending(path: "\(UUID().uuidString).m4a")
         let settings: [String: Any] = [
@@ -39,7 +50,10 @@ public final class AudioFileVoiceRecorder: VoiceRecorder {
     }
 
     public func cancel() async {
-        guard let recorder else { return }
+        guard let recorder else {
+            if isStarting { cancelledWhileStarting = true }
+            return
+        }
         recorder.stop()
         recorder.deleteRecording()
         self.recorder = nil

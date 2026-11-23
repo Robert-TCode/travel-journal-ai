@@ -330,9 +330,21 @@ struct CaptureViewModelVoiceTests {
         #expect(repository.savedEntries.isEmpty)
     }
 
+    /// The recorder throws CancellationError when the sheet closed before recording began: not a failure to report.
+    @Test(.timeLimit(.minutes(1)))
+    func closingTheSheetBeforeRecordingStartsIsNotAnError() async {
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(recorder: MockVoiceRecorder(startError: CancellationError()))
+        defer { observing.cancel() }
+
+        await sut.startRecording()
+
+        #expect(sut.recordingStartedAt == nil)
+        #expect(!sut.saveFailed)
+    }
+
     @Test(.timeLimit(.minutes(1)))
     func explainsWhenTheMicrophoneIsOff() async {
-        let (sut, _, observing) = await makeSUTWithOngoingTrip(recorder: MockVoiceRecorder(startError: .microphoneAccessDenied))
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(recorder: MockVoiceRecorder(startError: VoiceRecorderError.microphoneAccessDenied))
         defer { observing.cancel() }
 
         await sut.startRecording()

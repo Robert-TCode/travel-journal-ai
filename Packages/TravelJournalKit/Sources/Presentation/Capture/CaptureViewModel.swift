@@ -128,6 +128,8 @@ final class CaptureViewModel {
             recordingStartedAt = .now
         } catch VoiceRecorderError.microphoneAccessDenied {
             microphoneDenied = true
+        } catch is CancellationError {
+            // The user closed the sheet before recording began; nothing went wrong.
         } catch {
             saveFailed = true
         }
