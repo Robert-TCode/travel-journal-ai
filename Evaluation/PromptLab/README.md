@@ -9,7 +9,7 @@ swift run -c release PromptLab 3
 ```
 
 Needs a Mac with Apple Intelligence enabled. `Candidate.swift` holds the prompt under test (a copy of the
-app's `GeneratedEntryIndex` and `IndexingPrompt.instructions`), `EvalCases.swift` the notes and expected answers.
+app's indexing schema and `IndexingPrompt.instructions`), `EvalCases.swift` the notes and expected answers.
 
 ## Results
 
