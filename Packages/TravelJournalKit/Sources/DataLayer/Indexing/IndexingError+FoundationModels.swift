@@ -1,3 +1,4 @@
+import Foundation
 import Domain
 import FoundationModels
 
@@ -12,6 +13,10 @@ extension IndexingError {
             // The model is downloading, or Apple Intelligence was turned off meanwhile.
             self = .temporarilyUnavailable
         case LanguageModelSession.Error.concurrentRequests:
+            self = .temporarilyUnavailable
+        // Model-runtime failures that don't bridge to a typed case (missing image assets came as
+        // FoundationModels.LanguageModelError code -1) aren't the note's fault: retry on the next launch.
+        case let error as NSError where error.domain.hasPrefix("FoundationModels"):
             self = .temporarilyUnavailable
         default:
             self = .failed(.unexpected)

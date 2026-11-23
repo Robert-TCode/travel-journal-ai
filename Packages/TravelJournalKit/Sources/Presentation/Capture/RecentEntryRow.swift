@@ -12,12 +12,13 @@ struct RecentEntryRow: View {
             if let photoURL {
                 PhotoThumbnail(url: photoURL)
             } else {
-                SkyThumbnail(sky: Sky(entry: entry), size: PhotoThumbnail.defaultSize)
+                let sky = Sky(entry: entry)
+                SkyThumbnail(sky: sky, size: PhotoThumbnail.defaultSize)
                     .overlay {
                         if entry.audioName != nil {
                             Image(systemName: "waveform")
                                 .font(.dsTitle)
-                                .foregroundStyle(Sky(entry: entry).foreground)
+                                .foregroundStyle(sky.foreground)
                         }
                     }
             }

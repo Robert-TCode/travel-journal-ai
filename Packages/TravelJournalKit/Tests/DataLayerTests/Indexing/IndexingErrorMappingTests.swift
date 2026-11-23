@@ -36,6 +36,12 @@ struct IndexingErrorMappingTests {
         #expect(IndexingError(error) == .temporarilyUnavailable)
     }
 
+    @Test func anUntypedModelRuntimeErrorIsTemporary() {
+        let error = NSError(domain: "FoundationModels.LanguageModelError", code: -1)
+
+        #expect(IndexingError(error) == .temporarilyUnavailable)
+    }
+
     @Test func anythingElseIsUnexpected() {
         #expect(IndexingError(CocoaError(.fileNoSuchFile)) == .failed(.unexpected))
     }

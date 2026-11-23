@@ -29,12 +29,14 @@ struct MapKitNearbyPlacesClient: Sendable {
         }, maximumCount: maximumCount)
     }
 
-    /// Nearest first, without duplicates (chains often appear twice).
+    /// Nearest first, without duplicates (chains often appear twice). Blank names, and a place called
+    /// like the schema's "no landmark" choice, would make that choice ambiguous, so they are left out.
     static func nearestNames(_ places: [(name: String, distance: CLLocationDistance)], maximumCount: Int) -> [String] {
         var seen = Set<String>()
         return places
             .sorted { $0.distance < $1.distance }
-            .map(\.name)
+            .map { $0.name.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && $0.lowercased() != IndexingSchema.noLandmark }
             .filter { seen.insert($0).inserted }
             .prefix(maximumCount)
             .map { $0 }

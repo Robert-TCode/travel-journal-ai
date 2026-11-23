@@ -17,7 +17,10 @@ public struct TripSummary: Sendable, Equatable, Identifiable {
         let entriesByTrip = Dictionary(grouping: entries, by: \.tripID)
         return trips.map { trip in
             let tripEntries = entriesByTrip[trip.id] ?? []
-            let counts = tripEntries.flatMap(\.tags).reduce(into: [:]) { $0[$1, default: 0] += 1 }
+            // Moods are shown apart from topics, so "happy" doesn't crowd out what the trip was about.
+            let counts = tripEntries.flatMap(\.tags)
+                .filter { Mood(rawValue: $0) == nil }
+                .reduce(into: [:]) { $0[$1, default: 0] += 1 }
             let topTags = counts
                 .sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
                 .prefix(topTagCount)

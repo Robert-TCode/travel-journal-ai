@@ -16,4 +16,10 @@ struct MapKitNearbyPlacesClientTests {
 
         #expect(names == ["Owakudani", "Kurotamago-kan", "7-Eleven"])
     }
+
+    @Test func leavesOutBlankNamesAndOnesThatLookLikeNoLandmark() {
+        let places = [(name: " ", distance: 1.0), (name: "None", distance: 2.0), (name: "Owakudani", distance: 3.0)]
+
+        #expect(MapKitNearbyPlacesClient.nearestNames(places, maximumCount: 8) == ["Owakudani"])
+    }
 }
