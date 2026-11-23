@@ -20,7 +20,7 @@ mkdir "$staging/PhotoEval"
 cp "$photos"/* "$here/cases.json" "$staging/PhotoEval"/
 
 xcrun devicectl device copy to --device "$device" "${container[@]}" \
-    --source "$staging/PhotoEval" --destination Documents/ > /dev/null
+    --source "$staging/PhotoEval" --destination Documents/PhotoEval > /dev/null
 args=(-photoEval)
 [[ -n "${OCR:-}" ]] && args+=(-ocr)
 xcrun devicectl device process launch --device "$device" --terminate-existing "$bundle" -- "${args[@]}" > /dev/null

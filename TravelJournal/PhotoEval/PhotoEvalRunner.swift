@@ -69,8 +69,12 @@ final class PhotoEvalRunner {
     ) async -> (section: String, summary: String) {
         var rows: [String] = []
         var tagHits = 0, moodHits = 0, clean = 0, failures = 0, milliseconds = 0, inputTokens = 0, toolCalls = 0
+        var hottest = ProcessInfo.ThermalState.nominal
         for (number, evalCase) in cases.enumerated() {
-            progress = "\(name)\n\(number + 1)/\(cases.count): \(evalCase.photo)"
+            // A hot phone throttles the model; without this, slow numbers can't be told apart from a slow model.
+            let thermal = ProcessInfo.processInfo.thermalState
+            hottest = max(hottest, thermal)
+            progress = "\(name)\n\(number + 1)/\(cases.count): \(evalCase.photo)\nthermal: \(thermal.label)"
             let entry = Entry(tripID: UUID(), text: evalCase.note ?? "", photoNames: [evalCase.photo])
             do {
                 let (index, measurement) = try await indexer.measuredIndex(entry)
@@ -84,20 +88,21 @@ final class PhotoEvalRunner {
                 milliseconds += measurement.milliseconds
                 inputTokens += measurement.inputTokens
                 toolCalls += measurement.toolCalls
-                rows.append("| \(evalCase.photo) | \(hit ? "✓" : "✗") \(tags.joined(separator: ", ")) | \(moodRight ? "✓" : "✗") \(index.mood?.rawValue ?? "—") | \(forbidden.joined(separator: ", ")) | \(measurement.toolCalls) | \(measurement.milliseconds) | \(measurement.inputTokens)/\(measurement.outputTokens) |")
+                rows.append("| \(evalCase.photo) | \(hit ? "✓" : "✗") \(tags.joined(separator: ", ")) | \(moodRight ? "✓" : "✗") \(index.mood?.rawValue ?? "—") | \(forbidden.joined(separator: ", ")) | \(measurement.toolCalls) | \(measurement.milliseconds) | \(measurement.inputTokens)/\(measurement.outputTokens) | \(thermal.label) |")
             } catch {
                 failures += 1
-                rows.append("| \(evalCase.photo) | ERROR \(error) | | | | | |")
+                rows.append("| \(evalCase.photo) | ERROR \(error) | | | | | | \(thermal.label) |")
             }
         }
         let answered = max(cases.count - failures, 1)
         let summary = "expected tag \(tagHits)/\(cases.count) · mood \(moodHits)/\(cases.count) · no forbidden tags \(clean)/\(cases.count) " +
-            "· \(toolCalls) tool calls · avg \(milliseconds / answered) ms · avg \(inputTokens / answered) input tokens · \(failures) errors"
+            "· \(toolCalls) tool calls · avg \(milliseconds / answered) ms · avg \(inputTokens / answered) input tokens · \(failures) errors " +
+            "· hottest: \(hottest.label)"
         let section = """
             ## \(name)
 
-            | Photo | Tags | Mood | Forbidden | Tool calls | ms | tokens in/out |
-            |---|---|---|---|---|---|---|
+            | Photo | Tags | Mood | Forbidden | Tool calls | ms | tokens in/out | Thermal |
+            |---|---|---|---|---|---|---|---|
             \(rows.joined(separator: "\n"))
             """
         return (section, summary)
@@ -105,11 +110,26 @@ final class PhotoEvalRunner {
 
     /// Also written on failure, so the script waiting for report.md never hangs.
     private func finish(_ message: String) {
+        try? FileManager.default.createDirectory(at: Self.folder, withIntermediateDirectories: true)
         if !FileManager.default.fileExists(atPath: Self.folder.appending(path: "report.md").path()) {
             try? message.write(to: Self.folder.appending(path: "report.md"), atomically: true, encoding: .utf8)
         }
         progress = message
         isFinished = true
+    }
+}
+
+extension ProcessInfo.ThermalState: @retroactive Comparable {
+    public static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
+
+    var label: String {
+        switch self {
+        case .nominal: "nominal"
+        case .fair: "fair"
+        case .serious: "serious"
+        case .critical: "critical"
+        @unknown default: "unknown"
+        }
     }
 }
 
