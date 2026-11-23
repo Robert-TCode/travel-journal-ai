@@ -40,6 +40,8 @@ struct IndexingSchemaTests {
         let json = try json(nearbyPlaces: [])
 
         #expect(json.contains("Never generic categories"))
+        #expect(json.contains("Always in English"))
+        #expect(json.contains("a wrong name is worse than a plain word"))
         #expect(json.contains("use none"))
         #expect(json.contains("nostalgic"))
     }

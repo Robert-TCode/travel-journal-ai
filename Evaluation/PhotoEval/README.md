@@ -29,3 +29,24 @@ What it showed:
 - Without the mood to fill, it wrote more tags per photo (often 3–5 instead of 1–2).
 - It reads text on labels without OCR, but keeps it in Japanese ("ウコン"), and it invents places: "tokyo" on a ticket from Odawara to Kyoto.
 - A hot phone (thermal "serious") didn't change latency noticeably at this size.
+
+### Tag wording
+
+Same 20 photos, one change at a time. The forbidden list grew during this round (names the model invented),
+so rows after the line are scored more strictly than the ones above it.
+
+| Tags guide | Expected tag | No forbidden tag | Declined |
+|---|---|---|---|
+| Before | 13/20 | 19/20 | 0 |
+| + "Always in English: translate text you read" | 15/20 | 19/20 | 0 |
+| + "Name the exact dish, model or character only when you are sure" | 16/20 | 19/20 | 0 |
+| *stricter forbidden list from here* | | | |
+| Same as above, run twice (**shipped**) | 15/20, 14/20 | 17/20, 15/20 | 0, 2 |
+| + "A place only if written or given; never prices, dates, numbers or codes", run twice | 14/20, 14/20 | 14/20, 15/20 | 2, 2 |
+
+What it showed:
+- With 20 photos, two runs of the same prompt differ by one or two points. Most wording changes are inside that noise.
+- English tags were the one clear gain: text on labels became searchable ("pokka sapporo", "vitamin c").
+- Telling a small model to name things "only when sure" doesn't stop guessing; it invented anime and car names in every run.
+  It can't tell when it is sure.
+- The guardrails sometimes decline the museum panel and the turmeric drink, once the model reads and translates their text.

@@ -8,7 +8,7 @@ enum IndexingSchema {
     static let noLandmark = "none"
 
     static let landmarkDescription = "The place from this list that the note or photo is clearly about. none when it isn't clearly about one of them."
-    static let tagsDescription = "Specific words from the note or its context that someone would search for later, like 'ramen', 'sunset', 'museum'. Never generic categories such as 'food' or 'activities'."
+    static let tagsDescription = "Specific words from the note or its context that someone would search for later, like 'ramen', 'sunset', 'museum'. Never generic categories such as 'food' or 'activities'. Always in English: translate text you read in the photo. Name the exact dish, model or character only when you are sure; a wrong name is worse than a plain word."
     static let moodDescription = "The writer's feeling, only if the note states or clearly shows one. Most notes are plain facts like schedules, directions or lists: use none."
 
     /// The landmark comes first, so the tags can build on the place the model just chose.
