@@ -35,6 +35,7 @@ Packages/TravelJournalKit/
   Sources/DataLayer/           Persistence, location, weather, Spotlight, language models
   Sources/Presentation/        SwiftUI views and view models
   Tests/                       Swift Testing suites per layer
+Evaluation/PromptLab/          Scores the indexing prompt on the real model (Mac)
 ```
 
 Dependency rule: `Presentation → Domain ← DataLayer`. Only the app target sees all three.
