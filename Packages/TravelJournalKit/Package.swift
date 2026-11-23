@@ -20,11 +20,11 @@ let package = Package(
         .target(name: "Domain"),
         // Repositories and data sources: persistence, location, weather, Spotlight, language models.
         .target(name: "DataLayer", dependencies: ["Domain"]),
-        // SwiftUI views and view models. Knows Domain only.
+        // SwiftUI views and view models. Knows Domain and the design system.
         .target(name: "Presentation", dependencies: ["Domain", .product(name: "DesignSystem", package: "DesignSystem")]),
 
         .testTarget(name: "DomainTests", dependencies: ["Domain"]),
         .testTarget(name: "DataLayerTests", dependencies: ["DataLayer"]),
-        .testTarget(name: "PresentationTests", dependencies: ["Presentation"]),
+        .testTarget(name: "PresentationTests", dependencies: ["Presentation", .product(name: "DesignSystem", package: "DesignSystem")]),
     ]
 )
