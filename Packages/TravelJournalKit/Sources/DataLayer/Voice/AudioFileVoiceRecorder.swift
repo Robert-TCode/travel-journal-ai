@@ -14,7 +14,8 @@ public final class AudioFileVoiceRecorder: VoiceRecorder {
         }
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.record, mode: .spokenAudio)
-        try session.setActive(true)
+        // The synchronous setActive blocks the main thread long enough that the recording sheet seemed not to open.
+        _ = try await session.activate(options: [])
 
         let url = URL.temporaryDirectory.appending(path: "\(UUID().uuidString).m4a")
         let settings: [String: Any] = [
@@ -33,7 +34,7 @@ public final class AudioFileVoiceRecorder: VoiceRecorder {
         let duration = recorder.currentTime
         recorder.stop()
         self.recorder = nil
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        await Self.deactivateSession()
         return duration > 0.5 ? recorder.url : nil
     }
 
@@ -42,6 +43,11 @@ public final class AudioFileVoiceRecorder: VoiceRecorder {
         recorder.stop()
         recorder.deleteRecording()
         self.recorder = nil
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        await Self.deactivateSession()
+    }
+
+    /// Lets music or a podcast that was paused for the recording resume.
+    private static func deactivateSession() async {
+        _ = try? await AVAudioSession.sharedInstance().deactivate(options: .notifyOthersOnDeactivation)
     }
 }
