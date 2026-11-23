@@ -172,7 +172,7 @@ struct IndexingCoordinatorTests {
     }
 
     @Test(.timeLimit(.minutes(1)))
-    func indexesEvenWhenTranscriptionFails() async {
+    func keepsTheVoiceNoteWhenTranscriptionFails() async {
         let repository = SpyEntryRepository()
         let sut = IndexingCoordinator(
             contextProvider: StubContextProvider(),
@@ -186,7 +186,27 @@ struct IndexingCoordinatorTests {
 
         #expect(repository.entries.first?.transcript == nil)
         #expect(repository.entries.first?.audioName == "note.m4a")
-        #expect(repository.entries.first?.indexingStatus == .done)
+        #expect(repository.entries.first?.indexingStatus == .failed)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func aVoiceNoteThatCouldNotBeTranscribedNeverReachesTheModel() async {
+        let repository = SpyEntryRepository()
+        let indexer = MockEntryIndexer(returning: .success(EntryIndex(tags: ["japan", "tokyo"], mood: nil)))
+        let sut = IndexingCoordinator(
+            contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(result: .failure(MockIndexerError())),
+            indexer: indexer,
+            repository: repository
+        )
+
+        await sut.enqueue(Entry(tripID: UUID(), text: "", audioName: "note.m4a"))
+        await sut.waitUntilIdle()
+
+        #expect(indexer.receivedEntries.isEmpty)
+        #expect(repository.entries.first?.tags.isEmpty == true)
+        #expect(repository.entries.first?.indexingStatus == .failed)
+        #expect(repository.entries.first?.indexingFailure == .noContent)
     }
 
     @Test(.timeLimit(.minutes(1)))

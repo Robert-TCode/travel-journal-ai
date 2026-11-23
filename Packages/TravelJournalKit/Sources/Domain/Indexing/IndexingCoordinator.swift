@@ -78,6 +78,13 @@ public actor IndexingCoordinator: IndexingQueue {
     private func index(_ entry: Entry) async {
         let entry = await addTranscript(to: entry)
         var updated = entry
+        // Asked about nothing, the model still answers: an untranscribed voice note came back as "japan, tokyo, sakura".
+        guard entry.hasWrittenNote || !entry.photoNames.isEmpty else {
+            updated.indexingStatus = .failed
+            updated.indexingFailure = .noContent
+            try? await repository.save(updated)
+            return
+        }
         do {
             updated = entry.applying(try await indexer.index(entry))
         } catch IndexingError.temporarilyUnavailable {

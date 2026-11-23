@@ -100,6 +100,7 @@ struct RecentEntryRow: View {
         case .tooLong: "Too long to tag"
         case .unsupportedLanguage: "Not tagged: only English is supported"
         case .declined: "Not tagged automatically"
+        case .noContent: entry.audioName == nil ? "Not tagged" : "Not tagged: couldn't transcribe"
         case .unexpected, nil: "Not tagged"
         }
     }

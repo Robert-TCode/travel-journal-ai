@@ -13,6 +13,8 @@ public enum IndexingFailure: String, Sendable, Equatable {
     case tooLong
     /// Written in a language the model doesn't support.
     case unsupportedLanguage
+    /// Nothing for the model to read: no words and no photo, as with a voice note that couldn't be transcribed.
+    case noContent
     /// The model's safety guardrails or a refusal stopped it.
     case declined
     /// Anything else; usually a bug on our side.
