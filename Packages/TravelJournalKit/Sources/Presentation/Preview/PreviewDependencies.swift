@@ -2,6 +2,7 @@ import Domain
 import Foundation
 
 extension AppDependencies {
+    @MainActor
     static func preview(
         availability: AIModelAvailability = .available,
         trips: [Trip] = PreviewTripRepository.sampleTrips
@@ -15,7 +16,8 @@ extension AppDependencies {
             indexingQueue: PreviewIndexingQueue(),
             context: PreviewContextProvider(),
             media: PreviewMediaStore(),
-            recorder: PreviewVoiceRecorder()
+            recorder: PreviewVoiceRecorder(),
+            liveIndexing: LiveIndexing()
         )
     }
 }

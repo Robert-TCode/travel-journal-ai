@@ -104,7 +104,7 @@ struct NoteComposerView: View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionHeader("Recent")
             ForEach(viewModel.recentEntries) { entry in
-                RecentEntryRow(entry: entry, photoURL: viewModel.photoURL(for: entry))
+                RecentEntryRow(entry: viewModel.displayed(entry), photoURL: viewModel.photoURL(for: entry))
             }
         }
     }

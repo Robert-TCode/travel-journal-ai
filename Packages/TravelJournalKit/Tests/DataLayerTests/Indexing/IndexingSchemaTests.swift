@@ -73,6 +73,23 @@ struct IndexingSchemaTests {
         #expect(try IndexingSchema.index(from: content).landmark == nil)
     }
 
+    @Test func aSnapshotBeforeAnyTagHasNoPartialIndex() {
+        #expect(IndexingSchema.partialIndex(from: GeneratedContent(properties: [:])) == nil)
+    }
+
+    /// The mood is the last property, so in a snapshot it is either missing or about to end the stream.
+    @Test func aSnapshotShowsTagsAndLandmarkButNeverTheMood() {
+        let content = GeneratedContent(properties: ["landmark": "Owakudani", "tags": ["black ice"], "mood": GeneratedMood.happy])
+
+        #expect(IndexingSchema.partialIndex(from: content) == EntryIndex(tags: ["black ice"], mood: nil, landmark: "Owakudani"))
+    }
+
+    @Test func aSnapshotWithLandmarkNoneHasNoLandmark() {
+        let content = GeneratedContent(properties: ["landmark": "none", "tags": ["bus"]])
+
+        #expect(IndexingSchema.partialIndex(from: content)?.landmark == nil)
+    }
+
     /// Guards against the two mood lists drifting apart: same cases, same names, same order, plus `none` first.
     @Test func generatedMoodsMirrorDomainMoods() {
         let moods = GeneratedMood.allCases.dropFirst()

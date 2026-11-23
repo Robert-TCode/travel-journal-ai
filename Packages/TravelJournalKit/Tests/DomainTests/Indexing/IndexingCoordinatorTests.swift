@@ -11,7 +11,8 @@ struct IndexingCoordinatorTests {
             contextProvider: StubContextProvider(),
             transcriber: StubTranscriber(),
             indexer: MockEntryIndexer(returning: .success(EntryIndex(tags: ["walking"], mood: .tired))),
-            repository: repository
+            repository: repository,
+            live: LiveIndexing()
         )
         let entry = Entry(tripID: UUID(), text: "Walked 20k steps.")
 
@@ -30,7 +31,8 @@ struct IndexingCoordinatorTests {
             contextProvider: StubContextProvider(),
             transcriber: StubTranscriber(),
             indexer: MockEntryIndexer(returning: .failure(MockIndexerError())),
-            repository: repository
+            repository: repository,
+            live: LiveIndexing()
         )
 
         await sut.enqueue(Entry(tripID: UUID(), text: "Some note"))
@@ -48,7 +50,8 @@ struct IndexingCoordinatorTests {
             contextProvider: StubContextProvider(),
             transcriber: StubTranscriber(),
             indexer: MockEntryIndexer(returning: .failure(IndexingError.failed(.unsupportedLanguage))),
-            repository: repository
+            repository: repository,
+            live: LiveIndexing()
         )
 
         await sut.enqueue(Entry(tripID: UUID(), text: "Fahrt nach Hallstatt."))
@@ -66,7 +69,8 @@ struct IndexingCoordinatorTests {
             contextProvider: StubContextProvider(),
             transcriber: StubTranscriber(),
             indexer: MockEntryIndexer(returning: .failure(IndexingError.temporarilyUnavailable)),
-            repository: repository
+            repository: repository,
+            live: LiveIndexing()
         )
 
         await sut.enqueue(Entry(tripID: UUID(), text: "Some note"))
@@ -82,7 +86,7 @@ struct IndexingCoordinatorTests {
         let indexer = MockEntryIndexer(returning: .success(EntryIndex(tags: ["t"], mood: nil)))
         let sut = IndexingCoordinator(
             contextProvider: StubContextProvider(),
-            transcriber: StubTranscriber(), indexer: indexer, repository: SpyEntryRepository())
+            transcriber: StubTranscriber(), indexer: indexer, repository: SpyEntryRepository(), live: LiveIndexing())
 
         for text in ["first", "second", "third"] {
             await sut.enqueue(Entry(tripID: UUID(), text: text))
@@ -103,7 +107,7 @@ struct IndexingCoordinatorTests {
         let repository = SpyEntryRepository()
         let sut = IndexingCoordinator(
             contextProvider: StubContextProvider(context: context),
-            transcriber: StubTranscriber(), indexer: indexer, repository: repository)
+            transcriber: StubTranscriber(), indexer: indexer, repository: repository, live: LiveIndexing())
 
         await sut.enqueue(Entry(tripID: UUID(), text: "Black ice cream!"))
         await sut.waitUntilIdle()
@@ -120,7 +124,8 @@ struct IndexingCoordinatorTests {
             contextProvider: StubContextProvider(),
             transcriber: StubTranscriber(),
             indexer: MockEntryIndexer(returning: .success(EntryIndex(tags: ["bus"], mood: nil))),
-            repository: repository
+            repository: repository,
+            live: LiveIndexing()
         )
 
         await sut.enqueue(Entry(tripID: UUID(), text: "Bus leaves at 9."))
@@ -141,7 +146,7 @@ struct IndexingCoordinatorTests {
         let indexer = MockEntryIndexer(returning: .success(EntryIndex(tags: ["t"], mood: nil)))
         let sut = IndexingCoordinator(
             contextProvider: contextProvider,
-            transcriber: StubTranscriber(), indexer: indexer, repository: repository)
+            transcriber: StubTranscriber(), indexer: indexer, repository: repository, live: LiveIndexing())
 
         await sut.resumePendingEntries()
         await sut.waitUntilIdle()
@@ -160,7 +165,8 @@ struct IndexingCoordinatorTests {
             contextProvider: StubContextProvider(),
             transcriber: StubTranscriber(result: .success("Walked twenty thousand steps")),
             indexer: indexer,
-            repository: repository
+            repository: repository,
+            live: LiveIndexing()
         )
 
         await sut.enqueue(Entry(tripID: UUID(), text: "", audioName: "note.m4a"))
@@ -178,7 +184,8 @@ struct IndexingCoordinatorTests {
             contextProvider: StubContextProvider(),
             transcriber: StubTranscriber(result: .failure(MockIndexerError())),
             indexer: MockEntryIndexer(returning: .success(EntryIndex(tags: ["voice"], mood: nil))),
-            repository: repository
+            repository: repository,
+            live: LiveIndexing()
         )
 
         await sut.enqueue(Entry(tripID: UUID(), text: "", audioName: "note.m4a"))
@@ -197,7 +204,8 @@ struct IndexingCoordinatorTests {
             contextProvider: StubContextProvider(),
             transcriber: StubTranscriber(result: .failure(MockIndexerError())),
             indexer: indexer,
-            repository: repository
+            repository: repository,
+            live: LiveIndexing()
         )
 
         await sut.enqueue(Entry(tripID: UUID(), text: "", audioName: "note.m4a"))
@@ -217,7 +225,8 @@ struct IndexingCoordinatorTests {
             contextProvider: StubContextProvider(),
             transcriber: StubTranscriber(result: .success("Ferry to Miyajima")),
             indexer: MockEntryIndexer(returning: .success(EntryIndex(tags: ["ferry"], mood: nil))),
-            repository: repository
+            repository: repository,
+            live: LiveIndexing()
         )
 
         await sut.resumePendingEntries()

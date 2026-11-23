@@ -27,16 +27,21 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
     /// What one indexing call cost. The app only logs it; the photo eval reports it.
     public struct Measurement: Sendable {
         public let milliseconds: Int
+        /// How long the user waits before the first tag starts to appear. Nil when nothing was streamed.
+        public let firstPartialMilliseconds: Int?
         public let inputTokens: Int
         public let outputTokens: Int
         public let toolCalls: Int
     }
 
-    public func index(_ entry: Entry) async throws -> EntryIndex {
-        try await measuredIndex(entry).index
+    public func index(_ entry: Entry, onPartial: @Sendable (EntryIndex) async -> Void) async throws -> EntryIndex {
+        try await measuredIndex(entry, onPartial: onPartial).index
     }
 
-    public func measuredIndex(_ entry: Entry) async throws -> (index: EntryIndex, measurement: Measurement) {
+    public func measuredIndex(
+        _ entry: Entry,
+        onPartial: @Sendable (EntryIndex) async -> Void = { _ in }
+    ) async throws -> (index: EntryIndex, measurement: Measurement) {
         let text = IndexingPrompt.prompt(for: entry)
         // Only the first photo for now: each image costs tokens and latency on a small context.
         let photo = entry.photoNames.first.flatMap { Self.downsampledImage(at: media.photoURL(named: $0)) }
@@ -52,14 +57,23 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
 
         let response: LanguageModelSession.Response<GeneratedContent>
         let index: EntryIndex
+        var firstPartial: Duration?
         do {
             let schema = try IndexingSchema.schema(nearbyPlaces: entry.nearbyPlaces, asksForMood: entry.hasWrittenNote)
-            response = try await session.respond(schema: schema) {
+            let stream = session.streamResponse(schema: schema) {
                 text
                 if let photo {
                     Attachment(photo).label("photo")
                 }
             }
+            for try await snapshot in stream {
+                guard let partial = IndexingSchema.partialIndex(from: snapshot.rawContent) else { continue }
+                if firstPartial == nil {
+                    firstPartial = start.duration(to: clock.now)
+                }
+                await onPartial(partial)
+            }
+            response = try await stream.collect()
             index = try IndexingSchema.index(from: response.content)
         } catch {
             logger.error("index \(entry.id, privacy: .public) failed: \(String(describing: error), privacy: .public)")
@@ -69,6 +83,7 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
         let usage = response.usage
         let measurement = Measurement(
             milliseconds: Int(start.duration(to: clock.now) / .milliseconds(1)),
+            firstPartialMilliseconds: firstPartial.map { Int($0 / .milliseconds(1)) },
             inputTokens: usage.input.totalTokenCount,
             outputTokens: usage.output.totalTokenCount,
             toolCalls: session.transcript.filter { if case .toolCalls = $0 { true } else { false } }.count
@@ -76,6 +91,7 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
         logger.info("""
             index \(entry.id, privacy: .public)\(photo == nil ? "" : " with photo", privacy: .public), \
             \(entry.nearbyPlaces.count) nearby places: \(measurement.milliseconds) ms, \
+            first tag after \(measurement.firstPartialMilliseconds.map { "\($0) ms" } ?? "never", privacy: .public), \
             input \(usage.input.totalTokenCount) tokens (\(usage.input.cachedTokenCount) cached), \
             output \(usage.output.totalTokenCount) tokens, \(measurement.toolCalls) tool calls
             """)

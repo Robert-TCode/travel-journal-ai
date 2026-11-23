@@ -10,6 +10,7 @@ public struct AppDependencies: Sendable {
     let context: any EntryContextProvider
     let media: any MediaStore
     let recorder: any VoiceRecorder
+    let liveIndexing: LiveIndexing
 
     public init(
         availability: any AIModelAvailabilityService,
@@ -19,7 +20,8 @@ public struct AppDependencies: Sendable {
         indexingQueue: any IndexingQueue,
         context: any EntryContextProvider,
         media: any MediaStore,
-        recorder: any VoiceRecorder
+        recorder: any VoiceRecorder,
+        liveIndexing: LiveIndexing
     ) {
         self.availability = availability
         self.entries = entries
@@ -29,5 +31,6 @@ public struct AppDependencies: Sendable {
         self.context = context
         self.media = media
         self.recorder = recorder
+        self.liveIndexing = liveIndexing
     }
 }

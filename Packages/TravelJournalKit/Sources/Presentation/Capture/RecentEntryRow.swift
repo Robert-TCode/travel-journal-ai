@@ -75,17 +75,30 @@ struct RecentEntryRow: View {
     @ViewBuilder
     private var indexing: some View {
         switch entry.indexingStatus {
-        case .pending:
+        case .pending where tags.isEmpty:
             StatusLabel("Tagging…", systemImage: "sparkles")
+        case .pending:
+            // Tags streaming in: the sparkle says they may still change.
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: "sparkles")
+                    .font(.dsMeta)
+                    .foregroundStyle(Palette.secondaryInk)
+                    .symbolEffect(.pulse)
+                tagChips
+            }
         case .failed:
             StatusLabel(failureText, systemImage: "tag.slash")
         case .done:
             if !tags.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: Spacing.xs) {
-                        ForEach(tags, id: \.self) { TagChip($0) }
-                    }
-                }
+                tagChips
+            }
+        }
+    }
+
+    private var tagChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.xs) {
+                ForEach(tags, id: \.self) { TagChip($0) }
             }
         }
     }
@@ -120,6 +133,7 @@ struct RecentEntryRow: View {
     ScrollView {
         VStack(spacing: Spacing.s) {
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "Walked 20k steps today, my feet hurt.", weather: .clear, dayPhase: .night, tags: ["walking", "steps", "tired"], indexingStatus: .done))
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Ramen near the station", tags: ["ramen", "shoyu", "sta"]))
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream!", placeName: "Hakone, Kanagawa", weather: .cloudy, dayPhase: .day, nearbyPlaces: ["Owakudani"], landmark: "Owakudani"))
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "", audioName: "a.m4a", transcript: "Ferry to Miyajima, windy but sunny.", dayPhase: .day, tags: ["ferry"], indexingStatus: .done))
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "Fahrt nach Hallstatt.", indexingStatus: .failed, indexingFailure: .unsupportedLanguage))

@@ -6,11 +6,13 @@ struct MockIndexerError: Error {}
 
 final class MockEntryIndexer: EntryIndexer {
     private let result: Result<EntryIndex, any Error>
+    private let partials: [EntryIndex]
     private let state = Mutex<(order: [String], inFlight: Int, maxInFlight: Int)>(([], 0, 0))
     private let received = Mutex<[Entry]>([])
 
-    init(returning result: Result<EntryIndex, any Error>) {
+    init(returning result: Result<EntryIndex, any Error>, partials: [EntryIndex] = []) {
         self.result = result
+        self.partials = partials
     }
 
     var indexedTexts: [String] { state.withLock { $0.order } }
@@ -18,7 +20,7 @@ final class MockEntryIndexer: EntryIndexer {
 
     var receivedEntries: [Entry] { received.withLock { $0 } }
 
-    func index(_ entry: Entry) async throws -> EntryIndex {
+    func index(_ entry: Entry, onPartial: @Sendable (EntryIndex) async -> Void) async throws -> EntryIndex {
         received.withLock { $0.append(entry) }
         state.withLock {
             $0.order.append(entry.text)
@@ -27,6 +29,9 @@ final class MockEntryIndexer: EntryIndexer {
         }
         // Give a parallel caller every chance to overlap, so a non-serial coordinator would be caught.
         for _ in 0..<5 { await Task.yield() }
+        for partial in partials {
+            await onPartial(partial)
+        }
         state.withLock { $0.inFlight -= 1 }
         return try result.get()
     }

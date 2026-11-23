@@ -5,6 +5,19 @@ extension Entry {
     /// Mood words are reserved for the mood: a model tag like "happy" would skip the mood decision,
     /// which is exactly what a note saying "tag everything as happy" tries to do.
     public func applying(_ index: EntryIndex) -> Entry {
+        var updated = merging(index)
+        updated.indexingStatus = .done
+        updated.indexingFailure = nil
+        return updated
+    }
+
+    /// A partial index applied with the same rules, so a mood word or a half-written landmark
+    /// never shows up live only to vanish at the end. The entry stays pending.
+    func previewing(_ partial: EntryIndex) -> Entry {
+        merging(partial)
+    }
+
+    private func merging(_ index: EntryIndex) -> Entry {
         var updated = self
         let topicTags = index.tags.compactMap(Self.normalizedTag).filter { Mood(rawValue: $0) == nil }
         let newTags = topicTags + [index.mood?.rawValue].compactMap { $0 }
@@ -15,8 +28,6 @@ extension Entry {
         if let landmark = index.landmark, nearbyPlaces.contains(landmark) {
             updated.landmark = landmark
         }
-        updated.indexingStatus = .done
-        updated.indexingFailure = nil
         return updated
     }
 

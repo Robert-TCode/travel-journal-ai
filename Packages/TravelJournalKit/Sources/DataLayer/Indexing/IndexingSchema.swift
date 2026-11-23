@@ -42,6 +42,15 @@ enum IndexingSchema {
             landmark: landmark == noLandmark ? nil : landmark
         )
     }
+
+    /// What a streamed snapshot holds so far. Properties that haven't started yet are simply missing,
+    /// and the mood is never read: it arrives last and would only flicker in.
+    static func partialIndex(from content: GeneratedContent) -> EntryIndex? {
+        let tags = (try? content.value([String].self, forProperty: "tags")) ?? []
+        let landmark = (try? content.value(String.self, forProperty: "landmark")).flatMap { $0 == noLandmark ? nil : $0 }
+        guard !tags.isEmpty || landmark != nil else { return nil }
+        return EntryIndex(tags: tags, mood: nil, landmark: landmark)
+    }
 }
 
 /// Mirrors `Domain.Mood` plus `none`; Domain can't be `@Generable` because it must not import FoundationModels.

@@ -424,7 +424,8 @@ private func makeSUT(
         indexingQueue: indexingQueue,
         context: context,
         media: media,
-        recorder: recorder
+        recorder: recorder,
+        liveIndexing: LiveIndexing()
     ))
 }
 

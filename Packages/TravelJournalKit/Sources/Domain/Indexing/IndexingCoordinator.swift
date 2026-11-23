@@ -8,6 +8,7 @@ public actor IndexingCoordinator: IndexingQueue {
     private let transcriber: any Transcriber
     private let indexer: any EntryIndexer
     private let repository: any EntryRepository
+    private let live: LiveIndexing
     private var queue: [Task<Entry, Never>] = []
     private var drainTask: Task<Void, Never>?
 
@@ -15,12 +16,14 @@ public actor IndexingCoordinator: IndexingQueue {
         contextProvider: any EntryContextProvider,
         transcriber: any Transcriber,
         indexer: any EntryIndexer,
-        repository: any EntryRepository
+        repository: any EntryRepository,
+        live: LiveIndexing
     ) {
         self.contextProvider = contextProvider
         self.transcriber = transcriber
         self.indexer = indexer
         self.repository = repository
+        self.live = live
     }
 
     public func enqueue(_ entry: Entry) {
@@ -85,10 +88,14 @@ public actor IndexingCoordinator: IndexingQueue {
             try? await repository.save(updated)
             return
         }
+        let live = live
         do {
-            updated = entry.applying(try await indexer.index(entry))
+            updated = entry.applying(try await indexer.index(entry) { partial in
+                await live.show(entry.previewing(partial))
+            })
         } catch IndexingError.temporarilyUnavailable {
             // Left pending: `resumePendingEntries()` tries again on the next launch.
+            await live.clear(entry.id)
             return
         } catch IndexingError.failed(let failure) {
             updated.indexingStatus = .failed
@@ -99,5 +106,6 @@ public actor IndexingCoordinator: IndexingQueue {
         }
         // The original entry is already stored; if this write fails, it simply stays pending.
         try? await repository.save(updated)
+        await live.clear(entry.id)
     }
 }

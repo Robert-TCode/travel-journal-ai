@@ -18,11 +18,13 @@ struct TravelJournalApp: App {
         }
         let context = DeviceEntryContextProvider()
         let media = FileMediaStore()
+        let liveIndexing = LiveIndexing()
         indexingCoordinator = IndexingCoordinator(
             contextProvider: context,
             transcriber: SpeechTranscriberService(media: media),
             indexer: FoundationModelsEntryIndexer(media: media),
-            repository: store.entries
+            repository: store.entries,
+            live: liveIndexing
         )
         dependencies = AppDependencies(
             availability: SystemModelAvailabilityService(),
@@ -32,7 +34,8 @@ struct TravelJournalApp: App {
             indexingQueue: indexingCoordinator,
             context: context,
             media: media,
-            recorder: AudioFileVoiceRecorder()
+            recorder: AudioFileVoiceRecorder(),
+            liveIndexing: liveIndexing
         )
     }
 

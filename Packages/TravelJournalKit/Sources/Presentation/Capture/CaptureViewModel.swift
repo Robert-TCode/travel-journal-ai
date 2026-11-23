@@ -52,6 +52,11 @@ final class CaptureViewModel {
         !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// The stored entry, or while it is being indexed, the same entry with the tags generated so far.
+    func displayed(_ entry: Entry) -> Entry {
+        dependencies.liveIndexing.preview(of: entry) ?? entry
+    }
+
     func photoURL(for entry: Entry) -> URL? {
         entry.photoNames.first.map(dependencies.media.photoURL(named:))
     }
