@@ -24,9 +24,9 @@ final class PhotoEvalRunner {
 
     static let folder = URL.documentsDirectory.appending(path: "PhotoEval")
 
+    /// With `-ocr`, every photo runs twice, without and with `OCRTool`, so the two variants share one report.
     func run() async {
         try? FileManager.default.removeItem(at: Self.folder.appending(path: "report.md"))
-        let indexer = FoundationModelsEntryIndexer(media: FolderMediaStore(folder: Self.folder))
         let cases: [EvalCase]
         do {
             cases = try JSONDecoder().decode([EvalCase].self, from: Data(contentsOf: Self.folder.appending(path: "cases.json")))
@@ -35,10 +35,42 @@ final class PhotoEvalRunner {
             return
         }
 
+        var variants = [(name: "Photo only", readsText: false)]
+        if ProcessInfo.processInfo.arguments.contains("-ocr") {
+            variants.append((name: "Photo + OCRTool", readsText: true))
+        }
+        var sections: [String] = []
+        var summaries: [String] = []
+        for variant in variants {
+            let indexer = FoundationModelsEntryIndexer(media: FolderMediaStore(folder: Self.folder), readsTextInPhotos: variant.readsText)
+            let result = await evaluate(cases, with: indexer, named: variant.name)
+            sections.append(result.section)
+            summaries.append("\(variant.name): \(result.summary)")
+        }
+
+        let report = """
+            # Photo eval
+
+            \(Date.now.formatted(date: .abbreviated, time: .shortened)), \(cases.count) photos
+
+            \(summaries.map { "- \($0)" }.joined(separator: "\n"))
+
+            \(sections.joined(separator: "\n\n"))
+            """
+        try? report.write(to: Self.folder.appending(path: "report.md"), atomically: true, encoding: .utf8)
+        print(report)
+        finish("Done.\n" + summaries.joined(separator: "\n"))
+    }
+
+    private func evaluate(
+        _ cases: [EvalCase],
+        with indexer: FoundationModelsEntryIndexer,
+        named name: String
+    ) async -> (section: String, summary: String) {
         var rows: [String] = []
-        var tagHits = 0, moodHits = 0, clean = 0, failures = 0, milliseconds = 0, inputTokens = 0
+        var tagHits = 0, moodHits = 0, clean = 0, failures = 0, milliseconds = 0, inputTokens = 0, toolCalls = 0
         for (number, evalCase) in cases.enumerated() {
-            progress = "\(number + 1)/\(cases.count): \(evalCase.photo)"
+            progress = "\(name)\n\(number + 1)/\(cases.count): \(evalCase.photo)"
             let entry = Entry(tripID: UUID(), text: evalCase.note ?? "", photoNames: [evalCase.photo])
             do {
                 let (index, measurement) = try await indexer.measuredIndex(entry)
@@ -51,29 +83,24 @@ final class PhotoEvalRunner {
                 clean += forbidden.isEmpty ? 1 : 0
                 milliseconds += measurement.milliseconds
                 inputTokens += measurement.inputTokens
-                rows.append("| \(evalCase.photo) | \(hit ? "✓" : "✗") \(tags.joined(separator: ", ")) | \(moodRight ? "✓" : "✗") \(index.mood?.rawValue ?? "—") | \(forbidden.isEmpty ? "" : forbidden.joined(separator: ", ")) | \(measurement.milliseconds) | \(measurement.inputTokens)/\(measurement.outputTokens) |")
+                toolCalls += measurement.toolCalls
+                rows.append("| \(evalCase.photo) | \(hit ? "✓" : "✗") \(tags.joined(separator: ", ")) | \(moodRight ? "✓" : "✗") \(index.mood?.rawValue ?? "—") | \(forbidden.joined(separator: ", ")) | \(measurement.toolCalls) | \(measurement.milliseconds) | \(measurement.inputTokens)/\(measurement.outputTokens) |")
             } catch {
                 failures += 1
-                rows.append("| \(evalCase.photo) | ERROR \(error) | | | | |")
+                rows.append("| \(evalCase.photo) | ERROR \(error) | | | | | |")
             }
         }
-
         let answered = max(cases.count - failures, 1)
-        let report = """
-            # Photo eval
+        let summary = "expected tag \(tagHits)/\(cases.count) · mood \(moodHits)/\(cases.count) · no forbidden tags \(clean)/\(cases.count) " +
+            "· \(toolCalls) tool calls · avg \(milliseconds / answered) ms · avg \(inputTokens / answered) input tokens · \(failures) errors"
+        let section = """
+            ## \(name)
 
-            \(Date.now.formatted(date: .abbreviated, time: .shortened)), \(cases.count) photos, \(failures) errors
-
-            Expected tag found: \(tagHits)/\(cases.count) · mood right: \(moodHits)/\(cases.count) · no forbidden tags: \(clean)/\(cases.count) \
-            · avg \(milliseconds / answered) ms · avg \(inputTokens / answered) input tokens
-
-            | Photo | Tags | Mood | Forbidden | ms | tokens in/out |
-            |---|---|---|---|---|---|
+            | Photo | Tags | Mood | Forbidden | Tool calls | ms | tokens in/out |
+            |---|---|---|---|---|---|---|
             \(rows.joined(separator: "\n"))
             """
-        try? report.write(to: Self.folder.appending(path: "report.md"), atomically: true, encoding: .utf8)
-        print(report)
-        finish("Done: \(tagHits)/\(cases.count) tags, \(moodHits)/\(cases.count) moods. Report in Documents/PhotoEval/report.md")
+        return (section, summary)
     }
 
     /// Also written on failure, so the script waiting for report.md never hangs.

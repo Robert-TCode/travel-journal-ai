@@ -8,6 +8,7 @@ each photo with the words a good tag should contain, words no tag may contain, a
 
 ```
 Evaluation/PhotoEval/run-device.sh <device identifier>     # iPhone: the numbers that count
+OCR=1 Evaluation/PhotoEval/run-device.sh <device identifier>   # adds a run with OCRTool (device only)
 Evaluation/PhotoEval/run-simulator.sh <simulator udid>     # text only: the simulator has no image model
 ```
 
