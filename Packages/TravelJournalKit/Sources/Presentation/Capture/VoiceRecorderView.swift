@@ -17,6 +17,16 @@ struct VoiceRecorderView: View {
                     Button("Close") { dismiss() }
                         .buttonStyle(.dsSecondary)
                 }
+            } else if viewModel.recordingFailed {
+                EmptyStateView(
+                    systemImage: "mic.badge.xmark",
+                    sky: .unknown,
+                    title: "Couldn't start recording",
+                    message: "Another app may be using the microphone. Try again in a moment."
+                ) {
+                    Button("Close") { dismiss() }
+                        .buttonStyle(.dsSecondary)
+                }
             } else {
                 recorder
             }

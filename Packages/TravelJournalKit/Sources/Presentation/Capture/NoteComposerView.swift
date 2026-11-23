@@ -93,6 +93,8 @@ struct NoteComposerView: View {
     private var saveStatus: some View {
         if viewModel.didSave {
             StatusLabel("Saved. Tags will follow.", systemImage: "checkmark.circle")
+        } else if viewModel.recordingTooShort {
+            StatusLabel("Too short to save. Speak a little longer.", systemImage: "waveform.slash")
         } else if viewModel.saveFailed {
             StatusLabel("Couldn't save. Try again.", systemImage: "exclamationmark.triangle")
         }

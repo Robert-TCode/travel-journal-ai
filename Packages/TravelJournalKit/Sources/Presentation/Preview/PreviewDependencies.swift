@@ -33,6 +33,8 @@ struct PreviewMediaStore: MediaStore {
         URL.temporaryDirectory.appending(path: name)
     }
 
+    func deletePhoto(named name: String) async {}
+
     func storeAudio(movingFrom url: URL) async throws -> String { "preview.m4a" }
 
     func audioURL(named name: String) -> URL {

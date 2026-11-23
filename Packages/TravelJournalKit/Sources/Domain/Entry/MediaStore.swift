@@ -7,6 +7,9 @@ public protocol MediaStore: Sendable {
 
     func photoURL(named name: String) -> URL
 
+    /// For photos stored for an entry that then failed to save; best effort.
+    func deletePhoto(named name: String) async
+
     /// Moves a finished recording into the store and returns its file name.
     func storeAudio(movingFrom url: URL) async throws -> String
 

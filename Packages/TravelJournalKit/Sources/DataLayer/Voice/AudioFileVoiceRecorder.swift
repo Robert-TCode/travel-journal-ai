@@ -46,7 +46,11 @@ public final class AudioFileVoiceRecorder: VoiceRecorder {
         recorder.stop()
         self.recorder = nil
         await Self.deactivateSession()
-        return duration > 0.5 ? recorder.url : nil
+        guard duration > 0.5 else {
+            recorder.deleteRecording()
+            return nil
+        }
+        return recorder.url
     }
 
     public func cancel() async {

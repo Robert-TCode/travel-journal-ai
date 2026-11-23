@@ -37,6 +37,10 @@ public struct FileMediaStore: MediaStore {
         directory.appending(path: name, directoryHint: .notDirectory)
     }
 
+    public func deletePhoto(named name: String) async {
+        try? FileManager.default.removeItem(at: photoURL(named: name))
+    }
+
     /// Keeps the original bytes (HEIC stays HEIC); the extension only helps tools that look at it.
     private static func fileExtension(for data: Data) -> String {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),

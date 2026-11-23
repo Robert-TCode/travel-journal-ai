@@ -277,6 +277,22 @@ struct CaptureViewModelPhotoTests {
         #expect(sut.pendingPhotos.count == 1)
         #expect(repository.savedEntries.isEmpty)
     }
+
+    /// The photos stay in the composer for a retry, so the copies stored by the failed attempt would never be used.
+    @Test(.timeLimit(.minutes(1)))
+    func photosStoredForAnEntryThatFailedToSaveAreDeleted() async {
+        let media = MockMediaStore()
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(entries: MockEntryRepository(failing: true), media: media)
+        defer { observing.cancel() }
+        await sut.addPhoto(Data("one".utf8))
+        await sut.addPhoto(Data("two".utf8))
+
+        await sut.save()
+
+        #expect(sut.saveFailed)
+        #expect(media.deletedPhotos == ["photo-1.jpg", "photo-2.jpg"])
+        #expect(sut.pendingPhotos.count == 2)
+    }
 }
 
 @MainActor
@@ -314,6 +330,19 @@ struct CaptureViewModelVoiceTests {
         await sut.finishRecording()
 
         #expect(repository.savedEntries.isEmpty)
+        #expect(sut.recordingTooShort)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func aRecorderThatCannotStartSaysSoInTheSheet() async {
+        let (sut, _, observing) = await makeSUTWithOngoingTrip(recorder: MockVoiceRecorder(startError: MockRepositoryError()))
+        defer { observing.cancel() }
+
+        await sut.startRecording()
+
+        #expect(sut.recordingFailed)
+        #expect(!sut.saveFailed)
+        #expect(sut.recordingStartedAt == nil)
     }
 
     @Test(.timeLimit(.minutes(1)))

@@ -162,6 +162,7 @@ private struct FolderMediaStore: MediaStore {
     func photoURL(named name: String) -> URL { folder.appending(path: name) }
     func audioURL(named name: String) -> URL { folder.appending(path: name) }
     func storePhoto(_ data: Data) async throws -> String { throw CocoaError(.featureUnsupported) }
+    func deletePhoto(named name: String) async {}
     func storeAudio(movingFrom url: URL) async throws -> String { throw CocoaError(.featureUnsupported) }
 }
 #endif

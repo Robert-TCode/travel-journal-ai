@@ -30,6 +30,8 @@ final class CaptureViewModel {
     private(set) var pendingPhotos: [PendingPhoto] = []
     private(set) var recordingStartedAt: Date?
     private(set) var microphoneDenied = false
+    private(set) var recordingFailed = false
+    private(set) var recordingTooShort = false
     private(set) var isSaving = false
     private(set) var didSave = false
     private(set) var saveFailed = false
@@ -123,6 +125,8 @@ final class CaptureViewModel {
 
     func startRecording() async {
         microphoneDenied = false
+        recordingFailed = false
+        recordingTooShort = false
         do {
             try await dependencies.recorder.start()
             recordingStartedAt = .now
@@ -131,7 +135,7 @@ final class CaptureViewModel {
         } catch is CancellationError {
             // The user closed the sheet before recording began; nothing went wrong.
         } catch {
-            saveFailed = true
+            recordingFailed = true
         }
     }
 
@@ -143,7 +147,11 @@ final class CaptureViewModel {
     /// A voice note is its own entry: the audio is saved right away, the transcript follows with indexing.
     func finishRecording() async {
         recordingStartedAt = nil
-        guard let tripID = ongoingTrip?.id, let recording = await dependencies.recorder.stop() else { return }
+        guard let tripID = ongoingTrip?.id else { return }
+        guard let recording = await dependencies.recorder.stop() else {
+            recordingTooShort = true
+            return
+        }
         saveFailed = false
         do {
             let audioName = try await dependencies.media.storeAudio(movingFrom: recording)
@@ -165,14 +173,18 @@ final class CaptureViewModel {
         defer { isSaving = false }
 
         let entry: Entry
+        var photoNames: [String] = []
         do {
-            var photoNames: [String] = []
             for photo in pendingPhotos {
                 photoNames.append(try await dependencies.media.storePhoto(photo.data))
             }
             entry = Entry(tripID: tripID, text: noteText, photoNames: photoNames)
             try await dependencies.entries.save(entry)
         } catch {
+            // The user keeps the photos in the composer and may retry; copies from this attempt would be orphans.
+            for name in photoNames {
+                await dependencies.media.deletePhoto(named: name)
+            }
             saveFailed = true
             return
         }
