@@ -13,7 +13,8 @@ enum IndexingSchema {
 
     /// The landmark comes first, so the tags can build on the place the model just chose.
     /// Without nearby places there is nothing to choose from, and the property is left out entirely.
-    static func schema(nearbyPlaces: [String]) throws -> GenerationSchema {
+    /// The same goes for mood without a note: a property in the schema is one the model will fill.
+    static func schema(nearbyPlaces: [String], asksForMood: Bool = true) throws -> GenerationSchema {
         var properties: [DynamicGenerationSchema.Property] = []
         if !nearbyPlaces.isEmpty {
             properties.append(.init(
@@ -22,14 +23,14 @@ enum IndexingSchema {
                 schema: DynamicGenerationSchema(name: "Landmark", anyOf: nearbyPlaces + [noLandmark])
             ))
         }
-        properties += [
-            .init(
-                name: "tags",
-                description: tagsDescription,
-                schema: DynamicGenerationSchema(arrayOf: DynamicGenerationSchema(type: String.self), maximumElements: 5)
-            ),
-            .init(name: "mood", description: moodDescription, schema: DynamicGenerationSchema(type: GeneratedMood.self)),
-        ]
+        properties.append(.init(
+            name: "tags",
+            description: tagsDescription,
+            schema: DynamicGenerationSchema(arrayOf: DynamicGenerationSchema(type: String.self), maximumElements: 5)
+        ))
+        if asksForMood {
+            properties.append(.init(name: "mood", description: moodDescription, schema: DynamicGenerationSchema(type: GeneratedMood.self)))
+        }
         return try GenerationSchema(root: DynamicGenerationSchema(name: "EntryIndex", properties: properties), dependencies: [])
     }
 
@@ -37,7 +38,7 @@ enum IndexingSchema {
         let landmark = try? content.value(String.self, forProperty: "landmark")
         return EntryIndex(
             tags: try content.value([String].self, forProperty: "tags"),
-            mood: try content.value(GeneratedMood.self, forProperty: "mood").domainValue,
+            mood: (try? content.value(GeneratedMood.self, forProperty: "mood"))?.domainValue,
             landmark: landmark == noLandmark ? nil : landmark
         )
     }

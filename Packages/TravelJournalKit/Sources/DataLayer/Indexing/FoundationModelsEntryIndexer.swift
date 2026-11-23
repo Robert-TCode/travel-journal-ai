@@ -53,7 +53,7 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
         let response: LanguageModelSession.Response<GeneratedContent>
         let index: EntryIndex
         do {
-            let schema = try IndexingSchema.schema(nearbyPlaces: entry.nearbyPlaces)
+            let schema = try IndexingSchema.schema(nearbyPlaces: entry.nearbyPlaces, asksForMood: entry.hasWrittenNote)
             response = try await session.respond(schema: schema) {
                 text
                 if let photo {

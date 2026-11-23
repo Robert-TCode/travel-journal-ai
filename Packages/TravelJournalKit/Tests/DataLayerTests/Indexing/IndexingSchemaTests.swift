@@ -23,6 +23,19 @@ struct IndexingSchemaTests {
         #expect(try !json(nearbyPlaces: []).contains("landmark"))
     }
 
+    @Test func withoutANoteThereIsNoMoodToChoose() throws {
+        let json = String(decoding: try JSONEncoder().encode(try IndexingSchema.schema(nearbyPlaces: [], asksForMood: false)), as: UTF8.self)
+
+        #expect(!json.contains("mood"))
+        #expect(json.contains("tags"))
+    }
+
+    @Test func aResponseWithoutMoodHasNoMood() throws {
+        let content = GeneratedContent(properties: ["tags": ["moss garden"]])
+
+        #expect(try IndexingSchema.index(from: content).mood == nil)
+    }
+
     @Test func carriesTheTagAndMoodGuides() throws {
         let json = try json(nearbyPlaces: [])
 
