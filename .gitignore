@@ -28,3 +28,6 @@ Evaluation/Photos/
 
 # macOS
 .DS_Store
+
+# Personal signing: team ID and bundle ID
+Config/Signing.local.xcconfig

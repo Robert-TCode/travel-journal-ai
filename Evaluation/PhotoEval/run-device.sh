@@ -8,7 +8,10 @@ set -euo pipefail
 device=${1:?device identifier}
 here=${0:A:h}
 photos=${2:-$here/../Photos/japan}
-bundle=${BUNDLE_ID:-com.example.TravelJournal}
+# The bundle ID comes from your local signing config; BUNDLE_ID overrides it.
+local_config="$here/../../Config/Signing.local.xcconfig"
+bundle=${BUNDLE_ID:-$(sed -n 's/^PRODUCT_BUNDLE_IDENTIFIER *= *//p' "$local_config" 2>/dev/null)}
+bundle=${bundle:-com.example.TravelJournal}
 container=(--domain-type appDataContainer --domain-identifier "$bundle")
 
 staging=$(mktemp -d)
@@ -20,7 +23,7 @@ xcrun devicectl device copy to --device "$device" "${container[@]}" \
     --source "$staging/PhotoEval" --destination Documents/ > /dev/null
 args=(-photoEval)
 [[ -n "${OCR:-}" ]] && args+=(-ocr)
-xcrun devicectl device process launch --device "$device" --terminate-existing "$bundle" "${args[@]}" > /dev/null
+xcrun devicectl device process launch --device "$device" --terminate-existing "$bundle" -- "${args[@]}" > /dev/null
 echo "Running on the iPhone… keep it unlocked with the app open."
 
 for _ in {1..240}; do

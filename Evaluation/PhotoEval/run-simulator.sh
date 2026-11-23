@@ -7,7 +7,10 @@ set -euo pipefail
 udid=${1:?simulator udid}
 here=${0:A:h}
 photos=${2:-$here/../Photos/japan}
-bundle=com.example.TravelJournal
+# The bundle ID comes from your local signing config; BUNDLE_ID overrides it.
+local_config="$here/../../Config/Signing.local.xcconfig"
+bundle=${BUNDLE_ID:-$(sed -n 's/^PRODUCT_BUNDLE_IDENTIFIER *= *//p' "$local_config" 2>/dev/null)}
+bundle=${bundle:-com.example.TravelJournal}
 
 data=$(xcrun simctl get_app_container "$udid" "$bundle" data)
 eval_dir="$data/Documents/PhotoEval"
