@@ -1,5 +1,6 @@
-import SwiftUI
+import DesignSystem
 import Domain
+import SwiftUI
 
 /// Chooses between starting a trip and capturing into the ongoing one, and owns the trip-level actions.
 struct CaptureView: View {
@@ -13,15 +14,9 @@ struct CaptureView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Capture")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    if viewModel.ongoingTrip != nil {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("End trip") { isConfirmingEnd = true }
-                        }
-                    }
-                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .dsScreenBackground()
+                .toolbar(.hidden, for: .navigationBar)
                 .confirmationDialog(
                     "End \(viewModel.ongoingTrip?.name ?? "this trip")?",
                     isPresented: $isConfirmingEnd,
@@ -44,7 +39,7 @@ struct CaptureView: View {
         if !viewModel.hasLoadedTrips {
             ProgressView()
         } else if let trip = viewModel.ongoingTrip {
-            NoteComposerView(viewModel: viewModel, trip: trip)
+            NoteComposerView(viewModel: viewModel, trip: trip, onEndTrip: { isConfirmingEnd = true })
         } else {
             StartTripView(viewModel: viewModel)
         }

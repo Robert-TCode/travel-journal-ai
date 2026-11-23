@@ -22,10 +22,10 @@ struct PreviewEntryRepository: EntryRepository {
         guard let first = trips.first else { return [] }
         let second = trips.dropFirst().first ?? first
         return [
-            Entry(tripID: first.id, text: "Black ice cream at Owakudani.", placeName: "Hakone, Kanagawa"),
-            Entry(tripID: first.id, text: "Walked 20k steps today, my feet hurt.", tags: ["walking", "steps", "tired"], indexingStatus: .done),
-            Entry(tripID: first.id, text: "Best ramen of my life.", tags: ["ramen", "happy"], indexingStatus: .done),
-            Entry(tripID: second.id, text: "Fjord view at sunrise.", tags: ["fjord", "sunrise", "amazed"], indexingStatus: .done),
+            Entry(tripID: first.id, text: "Black ice cream at Owakudani.", placeName: "Hakone, Kanagawa", weather: .cloudy, isDaytime: true),
+            Entry(tripID: first.id, text: "Walked 20k steps today, my feet hurt.", weather: .clear, isDaytime: false, tags: ["walking", "steps", "tired"], indexingStatus: .done),
+            Entry(tripID: first.id, text: "Best ramen of my life.", weather: .clear, isDaytime: false, tags: ["ramen", "happy"], indexingStatus: .done),
+            Entry(tripID: second.id, text: "Fjord view at sunrise.", weather: .clear, isDaytime: true, tags: ["fjord", "sunrise", "amazed"], indexingStatus: .done),
         ]
     }
 

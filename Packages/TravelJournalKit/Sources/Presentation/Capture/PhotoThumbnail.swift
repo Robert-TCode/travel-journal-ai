@@ -1,10 +1,13 @@
+import DesignSystem
 import SwiftUI
 import UIKit
 
 /// Decodes a small thumbnail off the main thread instead of the full-resolution photo.
 struct PhotoThumbnail: View {
+    static let defaultSize: CGFloat = 56
+
     let url: URL
-    var size: CGFloat = 56
+    var size: CGFloat = defaultSize
 
     @State private var image: UIImage?
 
@@ -15,11 +18,11 @@ struct PhotoThumbnail: View {
                     .resizable()
                     .scaledToFill()
             } else {
-                Color.secondary.opacity(0.15)
+                Palette.fill
             }
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.thumbnail, style: .continuous))
         .task(id: url) {
             image = await UIImage(contentsOfFile: url.path())?.byPreparingThumbnail(ofSize: CGSize(width: size * 3, height: size * 3))
         }

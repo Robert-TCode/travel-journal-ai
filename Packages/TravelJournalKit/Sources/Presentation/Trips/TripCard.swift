@@ -1,46 +1,35 @@
-import SwiftUI
+import DesignSystem
 import Domain
+import SwiftUI
 
 struct TripCard: View {
     let summary: TripSummary
+    let sky: Sky
 
     private var trip: Trip { summary.trip }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(trip.name)
-                    .font(.title3.weight(.semibold))
-                Spacer()
-                if trip.isOngoing {
-                    Text("Now")
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(.white.opacity(0.7), in: Capsule())
-                }
-            }
-
-            Text("\(dateRange) · \(summary.memoryCount) \(summary.memoryCount == 1 ? "memory" : "memories")")
-                .font(.footnote)
-                .opacity(0.8)
-
-            if !summary.topTags.isEmpty {
-                HStack(spacing: 6) {
-                    ForEach(summary.topTags, id: \.self) { tag in
-                        Text(tag)
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(.white.opacity(0.55), in: Capsule())
+        SkyCard(sky: sky) {
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(trip.name)
+                        .font(.dsDisplay)
+                    Spacer()
+                    if trip.isOngoing {
+                        SkyChip("Now", sky: sky)
                     }
+                }
+                Text("\(dateRange) · \(summary.memoryCount) \(summary.memoryCount == 1 ? "memory" : "memories")")
+                    .font(.dsMeta)
+                    .opacity(0.85)
+                if !summary.topTags.isEmpty {
+                    HStack(spacing: Spacing.xs) {
+                        ForEach(summary.topTags, id: \.self) { SkyChip($0, sky: sky) }
+                    }
+                    .padding(.top, Spacing.xs)
                 }
             }
         }
-        .foregroundStyle(palette.ink)
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.fill.gradient, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var dateRange: String {
@@ -48,25 +37,39 @@ struct TripCard: View {
         guard let end = trip.endedAt else { return "Since \(start)" }
         return "\(start) – \(end.formatted(.dateTime.month(.abbreviated).day().year()))"
     }
+}
 
-    /// Stable per trip: derived from the id, not the list position, so a card keeps its color.
-    private var palette: (fill: Color, ink: Color) {
-        let palettes: [(Color, Color)] = [
-            (Color(red: 0.98, green: 0.86, blue: 0.80), Color(red: 0.45, green: 0.17, blue: 0.07)),
-            (Color(red: 0.84, green: 0.94, blue: 0.89), Color(red: 0.03, green: 0.31, blue: 0.25)),
-            (Color(red: 0.86, green: 0.91, blue: 0.98), Color(red: 0.05, green: 0.27, blue: 0.49)),
-            (Color(red: 0.91, green: 0.89, blue: 0.99), Color(red: 0.24, green: 0.20, blue: 0.54)),
-            (Color(red: 0.99, green: 0.93, blue: 0.82), Color(red: 0.39, green: 0.22, blue: 0.02)),
-        ]
-        let index = Int(trip.id.uuid.0) % palettes.count
-        return palettes[index]
+/// A tag on a sky: tinted with the sky's own text color, so it works on light and dark skies alike.
+private struct SkyChip: View {
+    let text: String
+    let sky: Sky
+
+    init(_ text: String, sky: Sky) {
+        self.text = text
+        self.sky = sky
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.dsMeta)
+            .padding(.horizontal, Spacing.s)
+            .padding(.vertical, 3)
+            .background(sky.foreground.opacity(0.14), in: RoundedRectangle(cornerRadius: Radius.chip, style: .continuous))
     }
 }
 
 #Preview {
-    VStack {
-        TripCard(summary: TripSummary(trip: Trip(name: "Japan"), memoryCount: 14, topTags: ["ramen", "onsen", "hiking"]))
-        TripCard(summary: TripSummary(trip: Trip(name: "Norway", endedAt: .now), memoryCount: 1, topTags: []))
+    VStack(spacing: Spacing.m) {
+        TripCard(
+            summary: TripSummary(trip: Trip(name: "Japan"), memoryCount: 14, topTags: ["ramen", "onsen", "hiking"]),
+            sky: Sky(phase: .goldenHour, condition: .clear)
+        )
+        TripCard(
+            summary: TripSummary(trip: Trip(name: "Norway", endedAt: .now), memoryCount: 1, topTags: ["fjord"]),
+            sky: Sky(phase: .night, condition: .clear)
+        )
+        TripCard(summary: TripSummary(trip: Trip(name: "Lisbon", endedAt: .now), memoryCount: 0, topTags: []), sky: .unknown)
     }
     .padding()
+    .dsScreenBackground()
 }

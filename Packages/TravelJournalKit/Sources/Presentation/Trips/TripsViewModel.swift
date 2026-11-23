@@ -1,3 +1,4 @@
+import DesignSystem
 import Domain
 import Observation
 
@@ -9,6 +10,8 @@ final class TripsViewModel {
 
     private(set) var hasLoaded = false
     private(set) var summaries: [TripSummary] = []
+    /// Each card is painted with the sky its trip saw most.
+    private(set) var skies: [Trip.ID: Sky] = [:]
 
     init(dependencies: AppDependencies) {
         self.dependencies = dependencies
@@ -31,5 +34,6 @@ final class TripsViewModel {
 
     private func refresh() {
         summaries = TripSummary.summaries(of: trips, entries: entries)
+        skies = Dictionary(grouping: entries, by: \.tripID).mapValues { Sky.dominant(in: $0) }
     }
 }

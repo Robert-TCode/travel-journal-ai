@@ -1,3 +1,4 @@
+import DesignSystem
 import SwiftUI
 
 struct PendingPhotosStrip: View {
@@ -6,7 +7,7 @@ struct PendingPhotosStrip: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.s) {
                 ForEach(photos) { photo in
                     thumbnail(of: photo)
                         .overlay(alignment: .topTrailing) {
@@ -33,10 +34,10 @@ struct PendingPhotosStrip: View {
                     .resizable()
                     .scaledToFill()
             } else {
-                Color.secondary.opacity(0.15)
+                Palette.fill
             }
         }
         .frame(width: 72, height: 72)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.thumbnail, style: .continuous))
     }
 }

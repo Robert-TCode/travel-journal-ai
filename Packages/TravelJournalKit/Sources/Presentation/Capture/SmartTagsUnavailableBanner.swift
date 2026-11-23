@@ -1,17 +1,22 @@
-import SwiftUI
+import DesignSystem
 import Domain
+import SwiftUI
 
 struct SmartTagsUnavailableBanner: View {
     let reason: AIModelAvailability.UnavailabilityReason
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
             Label(content.title, systemImage: content.systemImage)
-                .font(.headline)
+                .font(.dsTitle)
+                .foregroundStyle(Palette.ink)
             Text(content.message)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(.dsMeta)
+                .foregroundStyle(Palette.secondaryInk)
         }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .dsSurface()
     }
 
     private var content: (title: String, systemImage: String, message: String) {

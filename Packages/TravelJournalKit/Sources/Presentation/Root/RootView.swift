@@ -37,6 +37,7 @@ public struct RootView: View {
                 CaptureView(dependencies: dependencies)
             }
         }
+        .tint(Palette.accent)
     }
 }
 

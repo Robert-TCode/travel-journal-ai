@@ -1,43 +1,38 @@
+import DesignSystem
 import SwiftUI
 
 struct StartTripView: View {
     @Bindable var viewModel: CaptureViewModel
 
     var body: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "airplane.departure")
-                .font(.system(size: 36))
-                .foregroundStyle(.orange)
-            Text("Going somewhere?")
-                .font(.title3.weight(.semibold))
-            Text("Start a trip and every memory lands in it.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+        EmptyStateView(
+            systemImage: "suitcase.rolling",
+            title: "Going somewhere?",
+            message: "Start a trip and every memory lands in it."
+        ) {
+            VStack(spacing: Spacing.m) {
+                TextField("Trip name, e.g. Japan", text: $viewModel.tripNameDraft)
+                    .font(.dsBody)
+                    .foregroundStyle(Palette.ink)
+                    .submitLabel(.go)
+                    .onSubmit { Task { await viewModel.startTrip() } }
+                    .padding(Spacing.m)
+                    .dsSurface()
 
-            TextField("Trip name, e.g. Japan", text: $viewModel.tripNameDraft)
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.go)
-                .onSubmit { Task { await viewModel.startTrip() } }
+                Button {
+                    Task { await viewModel.startTrip() }
+                } label: {
+                    Text("Start trip")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.dsPrimary)
+                .disabled(!viewModel.canStartTrip)
 
-            Button {
-                Task { await viewModel.startTrip() }
-            } label: {
-                Text("Start trip")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
-            .disabled(!viewModel.canStartTrip)
-
-            if viewModel.startTripFailed {
-                Text("Couldn't start the trip. Try again.")
-                    .font(.footnote)
-                    .foregroundStyle(.red)
+                if viewModel.startTripFailed {
+                    StatusLabel("Couldn't start the trip. Try again.", systemImage: "exclamationmark.triangle")
+                }
             }
         }
-        .padding(24)
-        .frame(maxWidth: 420)
         .task { await viewModel.suggestTripName() }
     }
 }

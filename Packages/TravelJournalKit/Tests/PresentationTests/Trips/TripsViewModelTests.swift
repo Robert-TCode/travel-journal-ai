@@ -1,3 +1,4 @@
+import DesignSystem
 import Domain
 import Foundation
 import Testing
@@ -25,10 +26,12 @@ struct TripsViewModelTests {
         let observingEntries = Task { await sut.observeEntries() }
         defer { observingTrips.cancel(); observingEntries.cancel() }
 
-        entries.send([Entry(tripID: japan.id, text: "ramen", tags: ["ramen"])])
+        let ramen = Entry(tripID: japan.id, text: "ramen", weather: .rainy, tags: ["ramen"])
+        entries.send([ramen])
         while sut.summaries.first?.memoryCount != 1 { await Task.yield() }
 
         #expect(sut.hasLoaded)
         #expect(sut.summaries.first?.topTags == ["ramen"])
+        #expect(sut.skies[japan.id] == Sky(entry: ramen))
     }
 }

@@ -1,7 +1,8 @@
+import DesignSystem
 import PhotosUI
 import SwiftUI
 
-/// Camera (when the device has one), library and voice, side by side. Photos come back as their original bytes.
+/// Camera (when the device has one), library and voice. Photos come back as their original bytes.
 struct CaptureActionButtons: View {
     let onPhoto: (Data) async -> Void
     let onVoice: () -> Void
@@ -10,22 +11,16 @@ struct CaptureActionButtons: View {
     @State private var selection: [PhotosPickerItem] = []
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Spacing.s) {
             if CameraPicker.isAvailable {
-                Button {
-                    isShowingCamera = true
-                } label: {
-                    CaptureActionTile(title: "Camera", systemImage: "camera.fill", tint: .orange)
-                }
+                Button("Camera", systemImage: "camera") { isShowingCamera = true }
             }
             PhotosPicker(selection: $selection, maxSelectionCount: 4, matching: .images) {
-                CaptureActionTile(title: "Photos", systemImage: "photo.on.rectangle.angled", tint: .blue)
+                Label("Photos", systemImage: "photo.on.rectangle")
             }
-            Button(action: onVoice) {
-                CaptureActionTile(title: "Voice", systemImage: "mic.fill", tint: .purple)
-            }
+            Button("Voice note", systemImage: "mic", action: onVoice)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.dsIconAction)
         .fullScreenCover(isPresented: $isShowingCamera) {
             CameraPicker { data in
                 Task { await onPhoto(data) }
@@ -43,25 +38,5 @@ struct CaptureActionButtons: View {
                 }
             }
         }
-    }
-}
-
-private struct CaptureActionTile: View {
-    let title: String
-    let systemImage: String
-    let tint: Color
-
-    var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: systemImage)
-                .font(.title3)
-            Text(title)
-                .font(.caption.weight(.medium))
-        }
-        .foregroundStyle(tint)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

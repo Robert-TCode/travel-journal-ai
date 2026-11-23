@@ -1,84 +1,113 @@
-import SwiftUI
-import Foundation
+import DesignSystem
 import Domain
+import Foundation
+import SwiftUI
 
 struct RecentEntryRow: View {
     let entry: Entry
     var photoURL: URL?
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: Spacing.m) {
             if let photoURL {
                 PhotoThumbnail(url: photoURL)
+            } else {
+                SkyThumbnail(sky: Sky(entry: entry), size: PhotoThumbnail.defaultSize)
+                    .overlay {
+                        if entry.audioName != nil {
+                            Image(systemName: "waveform")
+                                .font(.dsTitle)
+                                .foregroundStyle(Sky(entry: entry).foreground)
+                        }
+                    }
             }
             details
+            Spacer(minLength: 0)
         }
+        .padding(Spacing.m)
+        .dsSurface()
     }
 
     private var details: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
             if !entry.text.isEmpty {
                 Text(entry.text)
-                    .font(.callout)
+                    .font(.dsBody)
+                    .foregroundStyle(Palette.ink)
                     .lineLimit(3)
             }
             if entry.audioName != nil {
                 voiceNote
             }
-            if let placeName = entry.placeName {
-                Label(placeName, systemImage: "mappin")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            metadata
+            meta
+            indexing
         }
-        .padding(.vertical, 2)
     }
 
     @ViewBuilder
     private var voiceNote: some View {
-        Label("Voice note", systemImage: "waveform")
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.purple)
         if let transcript = entry.transcript, !transcript.isEmpty {
             Text("“\(transcript)”")
-                .font(.callout)
+                .font(.dsBody)
+                .foregroundStyle(Palette.ink)
                 .lineLimit(3)
+        } else {
+            StatusLabel("Voice note", systemImage: "waveform")
         }
     }
 
+    private var meta: some View {
+        HStack(spacing: Spacing.s) {
+            Text(entry.createdAt.formatted(date: .omitted, time: .shortened))
+            if let placeName = entry.placeName {
+                Text(placeName)
+                    .lineLimit(1)
+            }
+            if let mood {
+                MoodLabel(mood)
+            }
+        }
+        .font(.dsMeta)
+        .foregroundStyle(Palette.secondaryInk)
+    }
+
     @ViewBuilder
-    private var metadata: some View {
+    private var indexing: some View {
         switch entry.indexingStatus {
         case .pending:
-            Label("Tagging…", systemImage: "sparkles")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            StatusLabel("Tagging…", systemImage: "sparkles")
         case .failed:
-            Label("Not tagged", systemImage: "tag.slash")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            StatusLabel("Not tagged", systemImage: "tag.slash")
         case .done:
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(entry.tags, id: \.self) { tag in
-                        Text(tag)
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(.tint.opacity(0.12), in: Capsule())
-                            .foregroundStyle(.tint)
+            if !tags.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Spacing.xs) {
+                        ForEach(tags, id: \.self) { TagChip($0) }
                     }
                 }
             }
         }
     }
+
+    /// Mood is stored as a tag from a fixed vocabulary; it's shown apart so it doesn't read like a topic.
+    private var mood: String? {
+        entry.tags.first { Mood(rawValue: $0) != nil }
+    }
+
+    private var tags: [String] {
+        entry.tags.filter { Mood(rawValue: $0) == nil }
+    }
 }
 
 #Preview {
-    List {
-        RecentEntryRow(entry: Entry(tripID: UUID(), text: "Walked 20k steps today, my feet hurt.", tags: ["walking", "steps", "tired"], indexingStatus: .done))
-        RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream at Owakudani.", placeName: "Hakone, Kanagawa"))
-        RecentEntryRow(entry: Entry(tripID: UUID(), text: "Bus leaves at 9.", indexingStatus: .failed))
+    ScrollView {
+        VStack(spacing: Spacing.s) {
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Walked 20k steps today, my feet hurt.", weather: .clear, isDaytime: false, tags: ["walking", "steps", "tired"], indexingStatus: .done))
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream at Owakudani.", placeName: "Hakone, Kanagawa", weather: .cloudy, isDaytime: true))
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "", audioName: "a.m4a", transcript: "Ferry to Miyajima, windy but sunny.", isDaytime: true, tags: ["ferry"], indexingStatus: .done))
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Bus leaves at 9.", indexingStatus: .failed))
+        }
+        .padding()
     }
+    .dsScreenBackground()
 }

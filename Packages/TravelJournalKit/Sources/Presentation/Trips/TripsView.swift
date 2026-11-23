@@ -1,3 +1,4 @@
+import DesignSystem
 import SwiftUI
 
 struct TripsView: View {
@@ -12,8 +13,9 @@ struct TripsView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Trips")
-                .navigationBarTitleDisplayMode(.inline)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .dsScreenBackground()
+                .toolbar(.hidden, for: .navigationBar)
         }
         .task { await viewModel.observeTrips() }
         .task { await viewModel.observeEntries() }
@@ -24,23 +26,26 @@ struct TripsView: View {
         if !viewModel.hasLoaded {
             ProgressView()
         } else if viewModel.summaries.isEmpty {
-            ContentUnavailableView {
-                Label("No trips yet", systemImage: "map")
-            } description: {
-                Text("Start a trip, then capture notes, photos and voice memos as you go.")
-            } actions: {
+            EmptyStateView(
+                systemImage: "map",
+                title: "No trips yet",
+                message: "Start a trip, then capture notes, photos and voice notes as you go."
+            ) {
                 Button("Start a trip", action: onStartTrip)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
+                    .buttonStyle(.dsPrimary)
             }
         } else {
             ScrollView {
-                LazyVStack(spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: Spacing.m) {
+                    Text("Trips")
+                        .font(.dsDisplay)
+                        .foregroundStyle(Palette.ink)
+                        .padding(.bottom, Spacing.xs)
                     ForEach(viewModel.summaries) { summary in
-                        TripCard(summary: summary)
+                        TripCard(summary: summary, sky: viewModel.skies[summary.id] ?? .unknown)
                     }
                 }
-                .padding()
+                .padding(Spacing.l)
             }
         }
     }

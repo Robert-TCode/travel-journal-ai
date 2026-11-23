@@ -1,3 +1,4 @@
+import DesignSystem
 import SwiftUI
 
 struct NoteEditor: View {
@@ -7,14 +8,16 @@ struct NoteEditor: View {
 
     var body: some View {
         TextEditor(text: $text)
-            .font(.callout)
-            .frame(minHeight: 110)
+            .font(.dsBody)
+            .foregroundStyle(Palette.ink)
+            .scrollContentBackground(.hidden)
+            .frame(minHeight: 96)
             .focused(isFocused)
             .overlay(alignment: .topLeading) {
                 if text.isEmpty {
                     Text(placeholder)
-                        .font(.callout)
-                        .foregroundStyle(.tertiary)
+                        .font(.dsBody)
+                        .foregroundStyle(Palette.secondaryInk)
                         .padding(.top, 8)
                         .padding(.leading, 5)
                         .allowsHitTesting(false)
