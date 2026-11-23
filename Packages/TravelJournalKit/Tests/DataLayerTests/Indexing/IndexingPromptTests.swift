@@ -52,6 +52,10 @@ struct IndexingPromptTests {
         #expect(IndexingPrompt.prompt(for: entry) == "Place: Hakone, Kanagawa")
     }
 
+    @Test func instructionsSayTravellingIsNotAMood() {
+        #expect(IndexingPrompt.instructions.contains("Travelling, booking or moving somewhere is not a feeling"))
+    }
+
     @Test func instructionsAskToTagWhatAPhotoShows() {
         #expect(IndexingPrompt.instructions.contains("When a photo is attached"))
     }

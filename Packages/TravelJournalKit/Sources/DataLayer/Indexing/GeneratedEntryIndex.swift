@@ -10,13 +10,15 @@ struct GeneratedEntryIndex {
     )
     var tags: [String]
 
-    @Guide(description: "Only if the writer states or clearly shows a feeling. Most notes have no mood: leave it empty for plain facts like schedules, directions or lists.")
-    var mood: GeneratedMood?
+    /// Not optional: in the eval the model almost never generated a missing value, but it does pick `none` when offered.
+    @Guide(description: "The writer's feeling, only if the note states or clearly shows one. Most notes are plain facts like schedules, directions or lists: use none.")
+    var mood: GeneratedMood
 }
 
-/// Mirrors `Domain.Mood`; Domain can't be `@Generable` because it must not import FoundationModels.
+/// Mirrors `Domain.Mood` plus `none`; Domain can't be `@Generable` because it must not import FoundationModels.
 @Generable
 enum GeneratedMood: CaseIterable {
+    case none
     case happy
     case excited
     case relaxed
@@ -28,13 +30,14 @@ enum GeneratedMood: CaseIterable {
 
 extension GeneratedEntryIndex {
     var domainValue: EntryIndex {
-        EntryIndex(tags: tags, mood: mood?.domainValue)
+        EntryIndex(tags: tags, mood: mood.domainValue)
     }
 }
 
 extension GeneratedMood {
-    var domainValue: Mood {
+    var domainValue: Mood? {
         switch self {
+        case .none: nil
         case .happy: .happy
         case .excited: .excited
         case .relaxed: .relaxed

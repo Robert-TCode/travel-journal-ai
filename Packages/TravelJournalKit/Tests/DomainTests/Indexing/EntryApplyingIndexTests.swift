@@ -34,6 +34,19 @@ struct EntryApplyingIndexTests {
         #expect(indexed.tags == ["narita", "lost luggage"])
     }
 
+    @Test func aMoodWordAsATagIsDroppedSoOnlyTheMoodDecides() {
+        let indexed = entry.applying(EntryIndex(tags: ["beach", "Happy"], mood: nil))
+
+        #expect(indexed.tags == ["beach"])
+    }
+
+    @Test func aMoodTagTheUserAddedStays() {
+        var tagged = entry
+        tagged.tags = ["happy"]
+
+        #expect(tagged.applying(EntryIndex(tags: ["beach"], mood: nil)).tags == ["happy", "beach"])
+    }
+
     @Test func neverTouchesTheText() {
         #expect(entry.applying(EntryIndex(tags: ["x"], mood: .happy)).text == entry.text)
     }
