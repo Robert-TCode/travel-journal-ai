@@ -77,7 +77,9 @@ final class PhotoEvalRunner {
             progress = "\(name)\n\(number + 1)/\(cases.count): \(evalCase.photo)\nthermal: \(thermal.label)"
             let entry = Entry(tripID: UUID(), text: evalCase.note ?? "", photoNames: [evalCase.photo])
             do {
-                let (index, measurement) = try await indexer.measuredIndex(entry)
+                let (index, measurement) = try await Self.withTimeout(.seconds(60)) {
+                    try await indexer.measuredIndex(entry)
+                }
                 let tags = index.tags.map { $0.lowercased() }
                 let hit = tags.contains { tag in evalCase.expect.contains { tag.contains($0) } }
                 let forbidden = tags.filter { tag in (evalCase.forbid ?? []).contains { tag.contains($0) } }
@@ -106,6 +108,26 @@ final class PhotoEvalRunner {
             \(rows.joined(separator: "\n"))
             """
         return (section, summary)
+    }
+
+    struct Timeout: Error, CustomStringConvertible {
+        var description: String { "timeout after 60 s" }
+    }
+
+    /// One stuck model call (a tool that never returns, say) would otherwise hold up the whole report.
+    private static func withTimeout<Value: Sendable>(
+        _ limit: Duration,
+        _ operation: @escaping @Sendable () async throws -> Value
+    ) async throws -> Value {
+        try await withThrowingTaskGroup(of: Value.self) { group in
+            group.addTask { try await operation() }
+            group.addTask {
+                try await Task.sleep(for: limit)
+                throw Timeout()
+            }
+            defer { group.cancelAll() }
+            return try await group.next()!
+        }
     }
 
     /// Also written on failure, so the script waiting for report.md never hangs.

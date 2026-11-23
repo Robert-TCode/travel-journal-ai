@@ -50,3 +50,20 @@ What it showed:
 - Telling a small model to name things "only when sure" doesn't stop guessing; it invented anime and car names in every run.
   It can't tell when it is sure.
 - The guardrails sometimes decline the museum panel and the turmeric drink, once the model reads and translates their text.
+
+### Reading text with OCRTool
+
+Same 20 photos, the shipped prompt, without and with `OCRTool` in the session. Each call is cut off after 60 s.
+
+| Variant | Expected tag | Timeouts | Declined | Tool calls | Avg latency | Avg input tokens |
+|---|---|---|---|---|---|---|
+| Photo only (**shipped**) | 14/20 | 0 | 2 | 0 | 2.2 s | 549 |
+| Photo + `OCRTool` | 5/20 | 14 | 0 | 6 | 7.4 s | 1016 |
+
+What it showed:
+- The model called the tool exactly on the six photos with text (the step count, museum panel, two drinks, the soup can,
+  the receipt) and never on the others.
+- Every photo without text timed out: with the tool available but unused, the request didn't finish in 60 s.
+- Where it worked, it cost 3.4× the time and almost twice the input tokens, and the tags weren't better: the model
+  already reads labels from the image. It added ingredients from the small print ("coenzyme q10") and kept Japanese text.
+- So `readsTextInPhotos` stays off. The one case it might pay for is dense small print, which a travel journal rarely needs.
