@@ -19,7 +19,18 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
         self.media = media
     }
 
+    /// What one indexing call cost. The app only logs it; the photo eval reports it.
+    public struct Measurement: Sendable {
+        public let milliseconds: Int
+        public let inputTokens: Int
+        public let outputTokens: Int
+    }
+
     public func index(_ entry: Entry) async throws -> EntryIndex {
+        try await measuredIndex(entry).index
+    }
+
+    public func measuredIndex(_ entry: Entry) async throws -> (index: EntryIndex, measurement: Measurement) {
         let session = LanguageModelSession(model: model, instructions: IndexingPrompt.instructions)
         let text = IndexingPrompt.prompt(for: entry)
         // Only the first photo for now: each image costs tokens and latency on a small context.
@@ -43,17 +54,20 @@ public final class FoundationModelsEntryIndexer: EntryIndexer {
             throw IndexingError(error)
         }
 
-        let elapsed = start.duration(to: clock.now)
         let usage = response.usage
+        let measurement = Measurement(
+            milliseconds: Int(start.duration(to: clock.now) / .milliseconds(1)),
+            inputTokens: usage.input.totalTokenCount,
+            outputTokens: usage.output.totalTokenCount
+        )
         logger.info("""
             index \(entry.id, privacy: .public)\(photo == nil ? "" : " with photo", privacy: .public), \
-            \(entry.nearbyPlaces.count) nearby places: \
-            \(elapsed.components.seconds * 1000 + elapsed.components.attoseconds / 1_000_000_000_000_000) ms, \
+            \(entry.nearbyPlaces.count) nearby places: \(measurement.milliseconds) ms, \
             input \(usage.input.totalTokenCount) tokens (\(usage.input.cachedTokenCount) cached), \
             output \(usage.output.totalTokenCount) tokens
             """)
 
-        return index
+        return (index, measurement)
     }
 
     private static func downsampledImage(at url: URL) -> CGImage? {

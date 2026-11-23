@@ -38,8 +38,20 @@ struct TravelJournalApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(dependencies: dependencies)
-                .task { await indexingCoordinator.resumePendingEntries() }
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-photoEval") {
+                PhotoEvalView()
+            } else {
+                app
+            }
+            #else
+            app
+            #endif
         }
+    }
+
+    private var app: some View {
+        RootView(dependencies: dependencies)
+            .task { await indexingCoordinator.resumePendingEntries() }
     }
 }

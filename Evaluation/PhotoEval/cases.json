@@ -1,0 +1,22 @@
+[
+  { "photo": "2.webp",  "expect": ["step", "walk", "health"] },
+  { "photo": "3.jpg",   "expect": ["shinjuku", "street", "city"] },
+  { "photo": "4.jpg",   "expect": ["arcade", "racing", "initial d", "game"] },
+  { "photo": "5.jpg",   "expect": ["onigiri", "rice ball"] },
+  { "photo": "6.jpg",   "expect": ["kyoto", "miaco", "jesuit", "sakoku"] },
+  { "photo": "7.jpg",   "expect": ["anime", "figure", "death note", "ryuk"] },
+  { "photo": "8.jpg",   "expect": ["sushi", "nigiri"] },
+  { "photo": "9.jpg",   "expect": ["matcha", "tea"] },
+  { "photo": "10.jpg",  "expect": ["lemon", "pokka", "vitamin"] },
+  { "photo": "11.jpg",  "expect": ["samurai", "armor", "armour"] },
+  { "photo": "12.jpg",  "expect": ["ramen", "gyoza", "noodle"] },
+  { "photo": "13.jpg",  "expect": ["corn", "potage"], "forbid": ["vending"] },
+  { "photo": "14.jpg",  "expect": ["maple", "autumn", "fall", "leaves"] },
+  { "photo": "15.jpg",  "expect": ["ticket", "train", "odawara", "receipt"], "forbid": ["mastercard", "credit card"] },
+  { "photo": "16.jpg",  "expect": ["pond", "duck", "glass"] },
+  { "photo": "17.jpg",  "expect": ["moss", "stone", "steps"] },
+  { "photo": "18.jpg",  "expect": ["ae86", "toyota", "corolla", "trueno"] },
+  { "photo": "19.jpg",  "expect": ["moss", "path"] },
+  { "photo": "20.jpg",  "expect": ["azalea", "japanese garden", "stream"] },
+  { "photo": "21.jpg",  "expect": ["turmeric", "ukon"] }
+]
