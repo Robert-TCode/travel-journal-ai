@@ -1,5 +1,7 @@
 import SwiftUI
+import Foundation
 import Domain
+import DesignSystem
 
 enum AppTab: Hashable {
     case trips
@@ -15,6 +17,18 @@ public struct RootView: View {
     }
 
     public var body: some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-designCatalog") {
+            DesignSystemCatalog()
+        } else {
+            tabs
+        }
+        #else
+        tabs
+        #endif
+    }
+
+    private var tabs: some View {
         TabView(selection: $selectedTab) {
             Tab("Trips", systemImage: "map", value: .trips) {
                 TripsView(dependencies: dependencies, onStartTrip: { selectedTab = .capture })
