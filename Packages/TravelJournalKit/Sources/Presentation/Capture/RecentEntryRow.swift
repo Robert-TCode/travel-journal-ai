@@ -102,9 +102,9 @@ struct RecentEntryRow: View {
 #Preview {
     ScrollView {
         VStack(spacing: Spacing.s) {
-            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Walked 20k steps today, my feet hurt.", weather: .clear, isDaytime: false, tags: ["walking", "steps", "tired"], indexingStatus: .done))
-            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream at Owakudani.", placeName: "Hakone, Kanagawa", weather: .cloudy, isDaytime: true))
-            RecentEntryRow(entry: Entry(tripID: UUID(), text: "", audioName: "a.m4a", transcript: "Ferry to Miyajima, windy but sunny.", isDaytime: true, tags: ["ferry"], indexingStatus: .done))
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Walked 20k steps today, my feet hurt.", weather: .clear, dayPhase: .night, tags: ["walking", "steps", "tired"], indexingStatus: .done))
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "Black ice cream at Owakudani.", placeName: "Hakone, Kanagawa", weather: .cloudy, dayPhase: .day))
+            RecentEntryRow(entry: Entry(tripID: UUID(), text: "", audioName: "a.m4a", transcript: "Ferry to Miyajima, windy but sunny.", dayPhase: .day, tags: ["ferry"], indexingStatus: .done))
             RecentEntryRow(entry: Entry(tripID: UUID(), text: "Bus leaves at 9.", indexingStatus: .failed))
         }
         .padding()

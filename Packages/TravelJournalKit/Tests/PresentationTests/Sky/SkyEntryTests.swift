@@ -42,16 +42,14 @@ struct SkyEntryTests {
         #expect(sky(hour: 12) == Sky(phase: .day, condition: .clear))
     }
 
-    @Test func aDarkWinterAfternoonIsNight() {
-        #expect(sky(hour: 16, isDaytime: false).phase == .night)
+    @Test func theSavedPhaseWinsOverTheClock() {
+        // 15:00 is "day" by the clock, but a December afternoon in Norway is already golden hour.
+        #expect(sky(hour: 15, dayPhase: .goldenHour).phase == .goldenHour)
     }
 
-    @Test func aBrightSummerEveningIsGoldenHour() {
-        #expect(sky(hour: 20, isDaytime: true).phase == .goldenHour)
-    }
-
-    @Test func aBrightNightIsDay() {
-        #expect(sky(hour: 23, isDaytime: true).phase == .day)
+    @Test(arguments: DayPhase.allCases)
+    func everySavedPhaseHasItsOwnSky(dayPhase: DayPhase) {
+        #expect(sky(hour: 12, dayPhase: dayPhase).phase?.rawValue == dayPhase.rawValue)
     }
 
     @Test func dominantSkyIsTheMostFrequentOne() {
@@ -81,8 +79,8 @@ struct SkyEntryTests {
         Self.calendar.date(from: DateComponents(year: 2026, month: 11, day: 23, hour: hour))!
     }
 
-    private func sky(hour: Int, isDaytime: Bool? = nil, weather: WeatherCondition? = nil) -> Sky {
-        Sky(at: date(hour: hour), isDaytime: isDaytime, weather: weather, calendar: Self.calendar)
+    private func sky(hour: Int, dayPhase: DayPhase? = nil, weather: WeatherCondition? = nil) -> Sky {
+        Sky(at: date(hour: hour), dayPhase: dayPhase, weather: weather, calendar: Self.calendar)
     }
 
     private func entry(hour: Int, weather: WeatherCondition) -> Entry {

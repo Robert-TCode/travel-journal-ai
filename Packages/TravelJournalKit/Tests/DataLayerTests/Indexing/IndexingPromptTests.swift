@@ -21,7 +21,7 @@ struct IndexingPromptTests {
             text: "Amazing view, freezing!",
             placeName: "Preikestolen, Norway",
             weather: .snowy,
-            isDaytime: true
+            dayPhase: .day
         )
 
         #expect(IndexingPrompt.prompt(for: entry) == """
@@ -54,6 +54,12 @@ struct IndexingPromptTests {
 
     @Test func instructionsAskToTagWhatAPhotoShows() {
         #expect(IndexingPrompt.instructions.contains("When a photo is attached"))
+    }
+
+    @Test func goldenHourIsSpelledOutForTheModel() {
+        let entry = Entry(tripID: UUID(), text: "Sunset over the fjord", dayPhase: .goldenHour)
+
+        #expect(IndexingPrompt.prompt(for: entry).hasSuffix("Time of day: golden hour, before sunset"))
     }
 
     @Test func aVoiceNoteTranscriptIsPartOfTheNote() {

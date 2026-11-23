@@ -16,7 +16,7 @@ public struct Entry: Sendable, Equatable, Identifiable {
     public var coordinate: Coordinate?
     public var placeName: String?
     public var weather: WeatherCondition?
-    public var isDaytime: Bool?
+    public var dayPhase: DayPhase?
 
     // The mood is stored here as one of the tags.
     public var tags: [String]
@@ -33,7 +33,7 @@ public struct Entry: Sendable, Equatable, Identifiable {
         coordinate: Coordinate? = nil,
         placeName: String? = nil,
         weather: WeatherCondition? = nil,
-        isDaytime: Bool? = nil,
+        dayPhase: DayPhase? = nil,
         tags: [String] = [],
         indexingStatus: IndexingStatus = .pending
     ) {
@@ -47,7 +47,7 @@ public struct Entry: Sendable, Equatable, Identifiable {
         self.coordinate = coordinate
         self.placeName = placeName
         self.weather = weather
-        self.isDaytime = isDaytime
+        self.dayPhase = dayPhase
         self.tags = tags
         self.indexingStatus = indexingStatus
     }

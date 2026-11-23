@@ -46,7 +46,7 @@ struct SwiftDataEntryRepositoryTests {
             coordinate: Coordinate(latitude: 35.24, longitude: 139.02),
             placeName: "Hakone, Kanagawa",
             weather: .clear,
-            isDaytime: true,
+            dayPhase: .day,
             tags: ["ice cream", "happy"],
             indexingStatus: .done
         )

@@ -31,19 +31,52 @@ struct OpenMeteoWeatherClientTests {
         #expect(OpenMeteoWeatherClient.condition(weatherCode: 42, windSpeed: 5) == nil)
     }
 
-    /// Shape copied from a real response, so a format change on their side shows up here.
+    /// Shape copied from a real response (Hakone, 23 Nov 2026), so a format change on their side shows up here.
+    private static let hakone = """
+        {"latitude":35.25,"longitude":139.0,"utc_offset_seconds":32400,"timezone":"Asia/Tokyo",
+         "current_units":{"time":"unixtime","weather_code":"wmo code"},
+         "current":{"time":1795429800,"interval":900,"weather_code":3,"is_day":0,"wind_speed_10m":6.0},
+         "daily_units":{"time":"unixtime","sunrise":"unixtime","sunset":"unixtime"},
+         "daily":{"time":[1795359600],"sunrise":[1795382774],"sunset":[1795419245]}}
+        """
+
     @Test func readsARealResponse() {
+        let reading = OpenMeteoWeatherClient.reading(from: Data(Self.hakone.utf8), at: Date(timeIntervalSince1970: 1_795_429_800))
+
+        #expect(reading == .init(condition: .cloudy, dayPhase: .night))
+    }
+
+    @Test func thePhaseComesFromThatPlacesSunset() {
+        let halfHourBeforeSunset = Date(timeIntervalSince1970: 1_795_419_245 - 1800)
+
+        let reading = OpenMeteoWeatherClient.reading(from: Data(Self.hakone.utf8), at: halfHourBeforeSunset)
+
+        #expect(reading?.dayPhase == .goldenHour)
+    }
+
+    /// In polar night Open-Meteo returns the same instant for sunrise and sunset (seen for Longyearbyen).
+    @Test func withoutARealSunriseItFallsBackToDayOrNight() {
         let json = """
-            {"latitude":35.25,"longitude":139.0,"current_units":{"weather_code":"wmo code"},
-             "current":{"time":"2026-11-22T18:15","interval":900,"weather_code":3,"is_day":0,"wind_speed_10m":6.0}}
+            {"current":{"time":1795429800,"weather_code":0,"is_day":0,"wind_speed_10m":3.0},
+             "daily":{"time":[1795388400],"sunrise":[1795388400],"sunset":[1795388400]}}
             """
 
-        let reading = OpenMeteoWeatherClient.reading(from: Data(json.utf8))
+        let reading = OpenMeteoWeatherClient.reading(from: Data(json.utf8), at: Date(timeIntervalSince1970: 1_795_429_800))
 
-        #expect(reading == .init(condition: .cloudy, isDaytime: false))
+        #expect(reading?.dayPhase == .night)
+    }
+
+    @Test func aResponseWithoutDailyDataStillGivesAReading() {
+        let json = """
+            {"current":{"time":1795429800,"weather_code":0,"is_day":1,"wind_speed_10m":3.0}}
+            """
+
+        let reading = OpenMeteoWeatherClient.reading(from: Data(json.utf8), at: .now)
+
+        #expect(reading == .init(condition: .clear, dayPhase: .day))
     }
 
     @Test func garbageGivesNoReading() {
-        #expect(OpenMeteoWeatherClient.reading(from: Data("not json".utf8)) == nil)
+        #expect(OpenMeteoWeatherClient.reading(from: Data("not json".utf8), at: .now) == nil)
     }
 }

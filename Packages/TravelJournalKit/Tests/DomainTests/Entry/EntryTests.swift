@@ -12,7 +12,7 @@ struct EntryTests {
         #expect(entry.coordinate == nil)
         #expect(entry.placeName == nil)
         #expect(entry.weather == nil)
-        #expect(entry.isDaytime == nil)
+        #expect(entry.dayPhase == nil)
     }
 
     @Test func keepsTheTextVerbatim() {

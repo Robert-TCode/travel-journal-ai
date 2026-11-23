@@ -16,7 +16,7 @@ final class EntryRecord {
     var longitude: Double?
     var placeName: String?
     var weather: String?
-    var isDaytime: Bool?
+    var dayPhase: String?
     var tags: [String]
     var indexingStatus: String
 
@@ -39,7 +39,7 @@ final class EntryRecord {
         longitude = entry.coordinate?.longitude
         placeName = entry.placeName
         weather = entry.weather?.rawValue
-        isDaytime = entry.isDaytime
+        dayPhase = entry.dayPhase?.rawValue
         tags = entry.tags
         indexingStatus = entry.indexingStatus.rawValue
     }
@@ -58,7 +58,7 @@ final class EntryRecord {
             },
             placeName: placeName,
             weather: weather.flatMap(WeatherCondition.init(rawValue:)),
-            isDaytime: isDaytime,
+            dayPhase: dayPhase.flatMap(DayPhase.init(rawValue:)),
             tags: tags,
             indexingStatus: Entry.IndexingStatus(rawValue: indexingStatus) ?? .pending
         )

@@ -3,7 +3,7 @@ import Domain
 import MapKit
 
 /// Location from CoreLocation ("when in use"), place name from MapKit reverse geocoding,
-/// weather and day/night from Open-Meteo.
+/// weather and the sun's phase from Open-Meteo.
 public final class DeviceEntryContextProvider: EntryContextProvider {
     private let locationTimeout: Duration
     private let weatherClient = OpenMeteoWeatherClient()
@@ -22,7 +22,7 @@ public final class DeviceEntryContextProvider: EntryContextProvider {
             coordinate: coordinate,
             placeName: await placeName,
             weather: reading?.condition,
-            isDaytime: reading?.isDaytime
+            dayPhase: reading?.dayPhase
         )
     }
 

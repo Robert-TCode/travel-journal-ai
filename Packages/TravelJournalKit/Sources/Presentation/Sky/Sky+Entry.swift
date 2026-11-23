@@ -3,16 +3,16 @@ import Domain
 import Foundation
 
 extension Sky {
-    /// The capture time is always known, so every entry has a sky, even offline or without location.
-    /// Clock bands give the phase; Open-Meteo's day/night, when present, corrects them (winter dusk at 16:00,
-    /// summer light at 22:00). Unknown weather is painted clear: a grey default would make most offline entries look dead.
+    /// The sun's phase saved with the entry is exact (it comes from that place's sunrise and sunset).
+    /// Without it, the capture time still gives an approximate phase, so even offline entries have a sky.
+    /// Unknown weather is painted clear: a grey default would make most offline entries look dead.
     init(entry: Entry, calendar: Calendar = .current) {
-        self.init(at: entry.createdAt, isDaytime: entry.isDaytime, weather: entry.weather, calendar: calendar)
+        self.init(at: entry.createdAt, dayPhase: entry.dayPhase, weather: entry.weather, calendar: calendar)
     }
 
-    init(at date: Date, isDaytime: Bool? = nil, weather: WeatherCondition? = nil, calendar: Calendar = .current) {
+    init(at date: Date, dayPhase: DayPhase? = nil, weather: WeatherCondition? = nil, calendar: Calendar = .current) {
         self.init(
-            phase: Self.phase(at: date, isDaytime: isDaytime, calendar: calendar),
+            phase: dayPhase.map(Phase.init) ?? Self.approximatePhase(at: date, calendar: calendar),
             condition: weather.map(Condition.init) ?? .clear
         )
     }
@@ -26,19 +26,25 @@ extension Sky {
         return skies.max { counts[$0, default: 0] < counts[$1, default: 0] } ?? .unknown
     }
 
-    private static func phase(at date: Date, isDaytime: Bool?, calendar: Calendar) -> Phase {
-        let byClock: Phase = switch calendar.component(.hour, from: date) {
+    private static func approximatePhase(at date: Date, calendar: Calendar) -> Phase {
+        switch calendar.component(.hour, from: date) {
         case 5..<7: .dawn
         case 7..<17: .day
         case 17..<19: .goldenHour
         case 19..<21: .dusk
         default: .night
         }
-        switch (byClock, isDaytime) {
-        case (.day, false), (.goldenHour, false): return .night
-        case (.dusk, true): return .goldenHour
-        case (.night, true): return .day
-        default: return byClock
+    }
+}
+
+private extension Sky.Phase {
+    init(_ phase: DayPhase) {
+        switch phase {
+        case .dawn: self = .dawn
+        case .day: self = .day
+        case .goldenHour: self = .goldenHour
+        case .dusk: self = .dusk
+        case .night: self = .night
         }
     }
 }

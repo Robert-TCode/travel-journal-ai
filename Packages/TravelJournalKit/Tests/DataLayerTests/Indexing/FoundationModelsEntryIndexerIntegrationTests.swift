@@ -14,7 +14,7 @@ import Domain
 struct FoundationModelsEntryIndexerIntegrationTests {
     @Test(.timeLimit(.minutes(1)), arguments: [
         Entry(tripID: UUID(), text: "Walked 20k steps today, my feet hurt and I can't wait to get to the hotel."),
-        Entry(tripID: UUID(), text: "Black ice cream at Owakudani, tastes like vanilla!", placeName: "Owakudani, Hakone", weather: .cloudy, isDaytime: true),
+        Entry(tripID: UUID(), text: "Black ice cream at Owakudani, tastes like vanilla!", placeName: "Owakudani, Hakone", weather: .cloudy, dayPhase: .day),
         Entry(tripID: UUID(), text: "Bus leaves at 9 from the main station."),
     ])
     func producesAValidIndex(for entry: Entry) async throws {

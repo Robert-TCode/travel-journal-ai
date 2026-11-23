@@ -14,7 +14,7 @@ struct OpenMeteoWeatherClientIntegrationTests {
     func returnsAReading(place: String, coordinate: Coordinate) async {
         let reading = await OpenMeteoWeatherClient().currentWeather(at: coordinate)
 
-        print("WEATHER>> \(place): \(reading.map { "\($0.condition?.rawValue ?? "no condition"), \($0.isDaytime ? "day" : "night")" } ?? "no reading")")
+        print("WEATHER>> \(place): \(reading.map { "\($0.condition?.rawValue ?? "no condition"), \($0.dayPhase.rawValue)" } ?? "no reading")")
         #expect(reading != nil)
     }
 }

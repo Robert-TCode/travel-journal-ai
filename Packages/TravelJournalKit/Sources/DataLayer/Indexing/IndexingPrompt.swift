@@ -27,9 +27,19 @@ enum IndexingPrompt {
         if let weather = entry.weather {
             lines.append("Weather: \(weather.rawValue)")
         }
-        if let isDaytime = entry.isDaytime {
-            lines.append("Time of day: \(isDaytime ? "day" : "night")")
+        if let dayPhase = entry.dayPhase {
+            lines.append("Time of day: \(Self.description(of: dayPhase))")
         }
         return lines.joined(separator: "\n")
+    }
+
+    private static func description(of phase: DayPhase) -> String {
+        switch phase {
+        case .dawn: "dawn"
+        case .day: "day"
+        case .goldenHour: "golden hour, before sunset"
+        case .dusk: "dusk, after sunset"
+        case .night: "night"
+        }
     }
 }
