@@ -35,11 +35,40 @@ flowchart LR
 - **Voice notes** are transcribed on device with Speech. The audio is the memory; the transcript is for search.
 - **Errors are translated into a retry policy** in the Domain layer: "the model is busy" leaves the entry pending,
   "this note is too long" or "unsupported language" marks it failed and the UI says why.
+- **Tags stream in live** while you stay on the screen. Partial results live in memory only; the store is written
+  once, with the finished index.
+- **Categories for search.** Besides specific tags, the model picks up to four categories from a fixed list of 38
+  (food, drink, beach, train…), and the device's weather and time of day are indexed as plain words.
+
+## How search works
+
+```mermaid
+flowchart LR
+    Q["what did I drink?"] --> R[On-device model<br/>+ SpotlightSearchTool]
+    R -->|found entries| S[On-device model<br/>picks from found IDs only]
+    S --> C[Cards with your<br/>real photos and places]
+    S -. none fits .-> N[Nothing found]
+```
+
+Every entry is indexed in Core Spotlight. **Retrieval**: the model turns the question into Spotlight queries through
+`SpotlightSearchTool`, and the app collects the IDs of what the tool returned. **Selection**: a second call chooses
+among those IDs only, through a schema that lists nothing else, or chooses none. The model never writes an ID, so a
+result always opens a real memory.
+
+## Trip story
+
+Opening a trip shows its memories by day and a **Tell the story** button. The on-device model writes a short story
+and picks highlights, again only from the trip's own entries. The story is stored with a fingerprint of the entries,
+so it opens instantly next time and offers an update once something changed. It never writes on its own: every story
+is a tap. Private Cloud Compute will write longer, richer stories once the entitlement is granted; the writer sits
+behind a protocol, so only the composition root changes.
 
 ## What I measured
 
-Photos: 20 of my own travel photos on an iPhone 17 with iOS 27. Notes: 13 notes × 3 runs on the Mac. Details, raw
-tables and what each run taught me: [photo eval](Evaluation/PhotoEval/README.md) · [prompt lab](Evaluation/PromptLab/README.md).
+Photos: 20 of my own travel photos on an iPhone 17 with iOS 27. Notes: 13 notes × 3 runs on the Mac. Search and
+stories: my own journal on the same iPhone. Details, raw tables and what each run taught me:
+[photo eval](Evaluation/PhotoEval/README.md) · [prompt lab](Evaluation/PromptLab/README.md) ·
+[search eval](Evaluation/SearchEval/README.md) · [story eval](Evaluation/StoryEval/README.md).
 
 | Question | Answer |
 |---|---|
@@ -49,6 +78,12 @@ tables and what each run taught me: [photo eval](Evaluation/PhotoEval/README.md)
 | Does writing tags in English help search? | Yes, the one clear gain: labels in Japanese became searchable words |
 | Is `OCRTool` worth it for photos? | No: 3.4× slower, timeouts on photos without text, no better tags |
 | How noisy is a 20-photo eval? | ±1–2 points between identical runs. Most prompt tweaks are inside that |
+| Does streaming make tagging faster? | No. It shows the first tag sooner; most of the wait is before the first token |
+| How does the search tool match? | Literally: "views" misses "view", "drink" misses "juice". The small model rarely tries other words |
+| What fixed search? | Meaning in the index, not the query: categories and weather words took it from 4/9 to 8/9 questions found |
+| Does search ever show a wrong memory? | Not in any run: grounding the answer in the found IDs held, and "nothing found" was always right |
+| How long does a search take? | ~1.3 s: retrieval ~1 s, selection ~0.35 s |
+| How long does an on-device trip story take? | ~3.6 s for a short trip, with highlights only from real entries |
 
 ## Status
 
@@ -56,15 +91,17 @@ tables and what each run taught me: [photo eval](Evaluation/PhotoEval/README.md)
 - [x] Silent indexing of text: guided generation, mood, error handling
 - [x] Photos and context: image input, weather, nearby landmarks with a dynamic schema, OCR experiment
 - [x] Voice notes with on-device transcription
-- [ ] Live tags while you watch, editable tags, trip mosaic
-- [ ] Search across memories (Core Spotlight, local RAG)
-- [ ] Ask about a memory and trip story (Private Cloud Compute)
+- [x] Live tags while you watch
+- [x] Search across memories (Core Spotlight, local RAG), with an on-device eval
+- [x] Trip screen with an on-device story
+- [ ] Editable tags, trip mosaic
+- [ ] Trip story and "ask about this memory" with Private Cloud Compute (waiting for the entitlement)
 - [ ] Evaluation across models
 
 ## Architecture
 
 ```
-TravelJournal/                 App target: composition root, debug photo eval
+TravelJournal/                 App target: composition root, Debug-only eval runners
 Packages/TravelJournalKit/
   Sources/Domain/              Entities, use cases, protocols. No Apple data frameworks
   Sources/DataLayer/           SwiftData, location, weather, MapKit, Speech, Foundation Models
@@ -74,6 +111,8 @@ Packages/DesignSystem/         Tokens and components ("sky by hour" colours)
 Evaluation/
   PromptLab/                   Scores prompt changes against the real model on the Mac
   PhotoEval/                   Runs the app's indexer on photos on a real iPhone
+  SearchEval/                  Runs search on the iPhone's own journal
+  StoryEval/                   Writes every trip's story on the iPhone
 ```
 
 Dependencies point inwards: `Presentation → Domain ← DataLayer`. Foundation Models types never leave DataLayer, so
@@ -82,7 +121,7 @@ the indexing and retry logic is tested without a model.
 ## Running it
 
 Requirements: Xcode 27 with the iOS 27 SDK, and an iPhone with Apple Intelligence turned on. The simulator runs the
-app and text indexing, but has no image model.
+app and text indexing, but has no image model, and search and stories failed there: the evals run on the iPhone.
 
 1. Copy `Config/Signing.local.example.xcconfig` to `Config/Signing.local.xcconfig` and set your team ID and bundle ID.
 2. Open `TravelJournal.xcodeproj` and run the `TravelJournal` scheme.
@@ -95,7 +134,8 @@ xcodebuild test -project TravelJournal.xcodeproj -scheme TravelJournal -destinat
 
 ## Privacy
 
-Indexing runs on the phone. Notes, photos, transcripts and tags never leave it. No API keys ship in the app.
+Indexing, search and stories run on the phone. Notes, photos, transcripts and tags never leave it. No API keys ship
+in the app. Entries are in the phone's Spotlight index, so they also show up in the system search, on the phone only.
 
 What does leave the phone when you save an entry, only if location is allowed and there is a network:
 
@@ -106,7 +146,8 @@ What does leave the phone when you save an entry, only if location is allowed an
 
 Nothing else is sent: no text, no tags, no identifiers.
 
-The test photos used in the evaluations are personal and are not in this repository.
+The photos and journals used in the evaluations are personal: they and the reports quoting them are not in this
+repository.
 
 ## License
 
