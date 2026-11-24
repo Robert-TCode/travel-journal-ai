@@ -234,4 +234,25 @@ struct IndexingCoordinatorTests {
 
         #expect(repository.entries.first?.transcript == "Ferry to Miyajima")
     }
+
+    /// Speech assets that can't download yet are no reason to give up on the note.
+    @Test(.timeLimit(.minutes(1)))
+    func aVoiceNoteStaysPendingWhileSpeechIsNotReady() async throws {
+        let repository = SpyEntryRepository()
+        let indexer = MockEntryIndexer(returning: .success(EntryIndex(tags: ["ferry"], mood: nil)))
+        let sut = IndexingCoordinator(
+            contextProvider: StubContextProvider(),
+            transcriber: StubTranscriber(result: .failure(IndexingError.temporarilyUnavailable)),
+            indexer: indexer,
+            repository: repository,
+            live: LiveIndexing()
+        )
+        let note = Entry(tripID: UUID(), text: "", audioName: "note.m4a")
+
+        await sut.enqueue(note)
+        await sut.waitUntilIdle()
+
+        #expect(repository.entries.first?.indexingStatus == .pending)
+        #expect(indexer.indexedTexts.isEmpty)
+    }
 }

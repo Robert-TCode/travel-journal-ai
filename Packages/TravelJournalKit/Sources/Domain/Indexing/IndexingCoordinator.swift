@@ -60,10 +60,17 @@ public actor IndexingCoordinator: IndexingQueue {
     }
 
     /// Part of the serial step, so a pending voice note resumed after a relaunch is transcribed too.
-    private func addTranscript(to entry: Entry) async -> Entry {
-        guard let audioName = entry.audioName, entry.transcript == nil,
-              let transcript = try? await transcriber.transcribe(audioNamed: audioName)
-        else { return entry }
+    /// Rethrows only `temporarilyUnavailable`; a recording that can't be transcribed comes back without a transcript.
+    private func addTranscript(to entry: Entry) async throws -> Entry {
+        guard let audioName = entry.audioName, entry.transcript == nil else { return entry }
+        let transcript: String
+        do {
+            transcript = try await transcriber.transcribe(audioNamed: audioName)
+        } catch IndexingError.temporarilyUnavailable {
+            throw IndexingError.temporarilyUnavailable
+        } catch {
+            return entry
+        }
         var transcribed = entry
         transcribed.transcript = transcript
         try? await repository.save(transcribed)
@@ -78,8 +85,14 @@ public actor IndexingCoordinator: IndexingQueue {
         drainTask = nil
     }
 
-    private func index(_ entry: Entry) async {
-        let entry = await addTranscript(to: entry)
+    private func index(_ queued: Entry) async {
+        let entry: Entry
+        do {
+            entry = try await addTranscript(to: queued)
+        } catch {
+            // Left pending, like a busy model: `resumePendingEntries()` tries again on the next launch.
+            return
+        }
         var updated = entry
         // Asked about nothing, the model still answers: an untranscribed voice note came back as "japan, tokyo, sakura".
         guard entry.hasWrittenNote || !entry.photoNames.isEmpty else {

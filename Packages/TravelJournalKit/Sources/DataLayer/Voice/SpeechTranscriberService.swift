@@ -30,8 +30,13 @@ public struct SpeechTranscriberService: Transcriber {
         results: some AsyncSequence<String, any Error> & Sendable
     ) async throws -> String {
         // The language model is a separate download; the first voice note triggers it.
-        if let request = try await AssetInventory.assetInstallationRequest(supporting: [module]) {
-            try await request.downloadAndInstall()
+        do {
+            if let request = try await AssetInventory.assetInstallationRequest(supporting: [module]) {
+                try await request.downloadAndInstall()
+            }
+        } catch {
+            // Usually no network yet: the note stays pending and is transcribed on a later launch.
+            throw IndexingError.temporarilyUnavailable
         }
         // The analyzer only accepts specific PCM formats, not the AAC we record in.
         guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [module]) else {
