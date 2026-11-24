@@ -31,7 +31,7 @@ final class PhotoEvalRunner: EvalRunner {
         do {
             cases = try JSONDecoder().decode([EvalCase].self, from: Data(contentsOf: Self.folder.appending(path: "cases.json")))
         } catch {
-            finish("Couldn't read \(Self.folder.path())/cases.json: \(error)")
+            finish("Couldn't read \(Self.folder.path(percentEncoded: false))/cases.json: \(error)")
             return
         }
 
@@ -111,7 +111,7 @@ final class PhotoEvalRunner: EvalRunner {
     }
 
     private func finish(_ message: String) {
-        if !FileManager.default.fileExists(atPath: Self.folder.appending(path: "report.md").path()) {
+        if !FileManager.default.fileExists(atPath: Self.folder.appending(path: "report.md").path(percentEncoded: false)) {
             writeReport(message, in: Self.folder)
         }
         progress = message

@@ -33,7 +33,7 @@ final class SearchEvalRunner: EvalRunner {
                 .map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty && !$0.hasPrefix("#") }
         } catch {
-            return finish("Couldn't read \(Self.folder.path())/queries.txt: \(error)")
+            return finish("Couldn't read \(Self.folder.path(percentEncoded: false))/queries.txt: \(error)")
         }
 
         progress = "Indexing the journal…"

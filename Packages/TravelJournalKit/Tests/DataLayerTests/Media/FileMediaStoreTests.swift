@@ -45,6 +45,6 @@ struct FileMediaStoreTests {
 
         #expect(name.hasSuffix(".m4a"))
         #expect(try Data(contentsOf: sut.audioURL(named: name)) == Data("audio".utf8))
-        #expect(!FileManager.default.fileExists(atPath: recording.path()))
+        #expect(!FileManager.default.fileExists(atPath: recording.path(percentEncoded: false)))
     }
 }

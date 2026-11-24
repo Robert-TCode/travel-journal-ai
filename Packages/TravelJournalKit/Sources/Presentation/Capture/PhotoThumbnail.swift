@@ -24,7 +24,13 @@ struct PhotoThumbnail: View {
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: Radius.thumbnail, style: .continuous))
         .task(id: url) {
-            image = await UIImage(contentsOfFile: url.path())?.byPreparingThumbnail(ofSize: CGSize(width: size * 3, height: size * 3))
+            image = await Self.thumbnail(of: url, side: size * 3)
         }
+    }
+
+    /// `path(percentEncoded: false)`: photos live under "Application Support", and the encoded
+    /// "Application%20Support" is not a file `UIImage` can open.
+    static func thumbnail(of url: URL, side: CGFloat) async -> UIImage? {
+        await UIImage(contentsOfFile: url.path(percentEncoded: false))?.byPreparingThumbnail(ofSize: CGSize(width: side, height: side))
     }
 }
