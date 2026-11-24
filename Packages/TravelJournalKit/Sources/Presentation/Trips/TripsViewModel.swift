@@ -17,6 +17,8 @@ final class TripsViewModel {
     var query = ""
     private(set) var search = SearchState.idle
     private var searchedIDs: [UUID] = []
+    /// Bumped by every submit and clear, so only the latest search may change what the screen shows.
+    private var searchGeneration = 0
 
     enum SearchState: Equatable {
         case idle
@@ -49,20 +51,23 @@ final class TripsViewModel {
     func submitSearch() async {
         let question = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty else { return clearSearch() }
+        searchGeneration += 1
+        let generation = searchGeneration
         search = .searching
         do {
             let ids = try await dependencies.searcher.search(question)
-            // A newer search or a clear may have happened while the model worked.
-            guard search == .searching, question == query.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+            // A newer submit or a clear happened while the model worked: its answer wins.
+            guard generation == searchGeneration else { return }
             searchedIDs = ids
             search = .results(SearchResult.results(for: ids, entries: entries, trips: trips))
         } catch {
-            guard search == .searching else { return }
+            guard generation == searchGeneration else { return }
             search = .failed
         }
     }
 
     func clearSearch() {
+        searchGeneration += 1
         query = ""
         searchedIDs = []
         search = .idle

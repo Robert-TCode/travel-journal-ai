@@ -11,7 +11,7 @@ struct TripsSearchTests {
     private let japan = Trip(name: "Japan")
     private let entries = MockEntryRepository()
 
-    private func makeSUT(searcher: StubMemorySearcher) -> TripsViewModel {
+    private func makeSUT(searcher: any MemorySearcher) -> TripsViewModel {
         let trips = FakeTripRepository(trips: [japan])
         return TripsViewModel(dependencies: AppDependencies(
             availability: MockAvailabilityService(),
@@ -103,6 +103,65 @@ struct TripsSearchTests {
         while sut.search != .results([SearchResult(entry: ramen, tripName: "Japan")]) { await Task.yield() }
 
         sut.clearSearch()
+        #expect(sut.search == .idle)
+    }
+
+    /// Editing the field after submitting must not leave the screen waiting forever.
+    @Test(.timeLimit(.minutes(1)))
+    func anAnswerArrivesEvenIfTheFieldWasEditedMeanwhile() async {
+        let ramen = Entry(tripID: japan.id, text: "Ramen")
+        let searcher = GatedMemorySearcher()
+        let sut = makeSUT(searcher: searcher)
+        let task = await observing(sut, [ramen])
+        defer { task.cancel() }
+
+        sut.query = "ramen"
+        let searching = Task { await sut.submitSearch() }
+        while await searcher.pendingCount == 0 { await Task.yield() }
+        sut.query = "ramen noodles"
+        await searcher.release(with: .success([ramen.id]))
+        await searching.value
+
+        #expect(sut.search == .results([SearchResult(entry: ramen, tripName: "Japan")]))
+    }
+
+    /// An older search finishing late, with a result or an error, never replaces the newer one.
+    @Test(.timeLimit(.minutes(1)))
+    func onlyTheLatestSearchChangesTheScreen() async {
+        let ramen = Entry(tripID: japan.id, text: "Ramen")
+        let searcher = GatedMemorySearcher()
+        let sut = makeSUT(searcher: searcher)
+        let task = await observing(sut, [ramen])
+        defer { task.cancel() }
+
+        sut.query = "temple"
+        let first = Task { await sut.submitSearch() }
+        while await searcher.pendingCount == 0 { await Task.yield() }
+        sut.query = "ramen"
+        let second = Task { await sut.submitSearch() }
+        while await searcher.pendingCount < 2 { await Task.yield() }
+
+        await searcher.release(with: .failure(SearchFailed()))
+        await first.value
+        #expect(sut.search == .searching)
+
+        await searcher.release(with: .success([ramen.id]))
+        await second.value
+        #expect(sut.search == .results([SearchResult(entry: ramen, tripName: "Japan")]))
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func clearingDuringASearchStaysClear() async {
+        let searcher = GatedMemorySearcher()
+        let sut = makeSUT(searcher: searcher)
+
+        sut.query = "ramen"
+        let searching = Task { await sut.submitSearch() }
+        while await searcher.pendingCount == 0 { await Task.yield() }
+        sut.clearSearch()
+        await searcher.release(with: .success([UUID()]))
+        await searching.value
+
         #expect(sut.search == .idle)
     }
 }
