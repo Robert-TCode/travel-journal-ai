@@ -1,5 +1,6 @@
 import DesignSystem
 import Domain
+import Foundation
 import Observation
 
 @MainActor @Observable
@@ -12,6 +13,18 @@ final class TripsViewModel {
     private(set) var summaries: [TripSummary] = []
     /// Each card is painted with the sky its trip saw most.
     private(set) var skies: [Trip.ID: Sky] = [:]
+
+    var query = ""
+    private(set) var search = SearchState.idle
+    private var searchedIDs: [UUID] = []
+
+    enum SearchState: Equatable {
+        case idle
+        case searching
+        /// Empty means the journal has nothing that answers the question.
+        case results([SearchResult])
+        case failed
+    }
 
     init(dependencies: AppDependencies) {
         self.dependencies = dependencies
@@ -32,8 +45,39 @@ final class TripsViewModel {
         }
     }
 
+    /// Runs on submit, not on every keystroke: each search is two model calls.
+    func submitSearch() async {
+        let question = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !question.isEmpty else { return clearSearch() }
+        search = .searching
+        do {
+            let ids = try await dependencies.searcher.search(question)
+            // A newer search or a clear may have happened while the model worked.
+            guard search == .searching, question == query.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+            searchedIDs = ids
+            search = .results(SearchResult.results(for: ids, entries: entries, trips: trips))
+        } catch {
+            guard search == .searching else { return }
+            search = .failed
+        }
+    }
+
+    func clearSearch() {
+        query = ""
+        searchedIDs = []
+        search = .idle
+    }
+
+    func photoURL(for entry: Entry) -> URL? {
+        entry.photoNames.first.map(dependencies.media.photoURL(named:))
+    }
+
     private func refresh() {
         summaries = TripSummary.summaries(of: trips, entries: entries)
         skies = Dictionary(grouping: entries, by: \.tripID).mapValues { Sky.dominant(in: $0) }
+        // Shown results follow edits to their entries, e.g. tags that finish indexing.
+        if case .results = search {
+            search = .results(SearchResult.results(for: searchedIDs, entries: entries, trips: trips))
+        }
     }
 }

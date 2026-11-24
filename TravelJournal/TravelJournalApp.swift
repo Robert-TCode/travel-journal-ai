@@ -9,6 +9,7 @@ struct TravelJournalApp: App {
     private let dependencies: AppDependencies
     private let indexingCoordinator: IndexingCoordinator
     private let searchableEntries: SearchIndexingEntryRepository
+    private let trips: any TripRepository
 
     init() {
         let store: JournalStore
@@ -26,6 +27,7 @@ struct TravelJournalApp: App {
             searchIndex: SpotlightEntryIndex(media: media)
         )
         searchableEntries = entries
+        trips = store.trips
         indexingCoordinator = IndexingCoordinator(
             contextProvider: context,
             transcriber: SpeechTranscriberService(media: media),
@@ -42,7 +44,8 @@ struct TravelJournalApp: App {
             context: context,
             media: media,
             recorder: AudioFileVoiceRecorder(),
-            liveIndexing: liveIndexing
+            liveIndexing: liveIndexing,
+            searcher: FoundationModelsMemorySearcher()
         )
     }
 
@@ -51,6 +54,8 @@ struct TravelJournalApp: App {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-photoEval") {
                 PhotoEvalView()
+            } else if ProcessInfo.processInfo.arguments.contains("-searchEval") {
+                SearchEvalView(runner: SearchEvalRunner(entries: searchableEntries, trips: trips))
             } else {
                 app
             }

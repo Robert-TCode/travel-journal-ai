@@ -425,7 +425,8 @@ private func makeSUT(
         context: context,
         media: media,
         recorder: recorder,
-        liveIndexing: LiveIndexing()
+        liveIndexing: LiveIndexing(),
+        searcher: StubMemorySearcher()
     ))
 }
 

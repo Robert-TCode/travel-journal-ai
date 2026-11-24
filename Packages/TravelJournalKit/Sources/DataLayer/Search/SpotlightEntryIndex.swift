@@ -4,9 +4,11 @@ import Foundation
 import os
 import UniformTypeIdentifiers
 
-/// Entries in the app's Core Spotlight index. The same index feeds the system search and, later,
-/// `SpotlightSearchTool`, so what is set here is exactly what both can match.
+/// Entries in the app's Core Spotlight index. The same index feeds the system search and `SpotlightSearchTool`,
+/// so what is set here is exactly what both can match.
 public struct SpotlightEntryIndex: EntrySearchIndex {
+    /// A named index: Apple reserves `CSSearchableIndex.default()` for prototyping.
+    static let indexName = "Journal"
     private let media: any MediaStore
     private let logger = Logger(subsystem: "TravelJournal", category: "search")
 
@@ -17,7 +19,7 @@ public struct SpotlightEntryIndex: EntrySearchIndex {
     public func index(_ entries: [SearchableEntry]) async throws {
         guard !entries.isEmpty else { return }
         do {
-            try await CSSearchableIndex.default().indexSearchableItems(entries.map(item(for:)))
+            try await CSSearchableIndex(name: Self.indexName).indexSearchableItems(entries.map(item(for:)))
             logger.info("indexed \(entries.count) entries for search")
         } catch {
             // Callers ignore the failure so saving never depends on search; the log is the only trace of it.
@@ -54,7 +56,7 @@ public struct SpotlightEntryIndex: EntrySearchIndex {
     }
 
     /// The first line of the note, so a result reads like the memory itself.
-    static func title(for entry: Entry) -> String {
+    public static func title(for entry: Entry) -> String {
         let firstLine = [entry.text, entry.transcript ?? ""]
             .lazy
             .compactMap { $0.split(whereSeparator: \.isNewline).first.map(String.init) }

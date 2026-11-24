@@ -1,0 +1,15 @@
+# One question per line. Mix questions the journal can answer with ones it can't,
+# so "nothing found" is tested as much as finding.
+ramen
+food
+what did I drink
+something sweet
+the view
+best views
+rainy day
+when was I tired
+a calm city
+black ice cream
+temples and shrines
+skiing
+museum

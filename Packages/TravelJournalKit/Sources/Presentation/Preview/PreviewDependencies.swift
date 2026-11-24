@@ -17,7 +17,8 @@ extension AppDependencies {
             context: PreviewContextProvider(),
             media: PreviewMediaStore(),
             recorder: PreviewVoiceRecorder(),
-            liveIndexing: LiveIndexing()
+            liveIndexing: LiveIndexing(),
+            searcher: PreviewMemorySearcher()
         )
     }
 }
@@ -48,4 +49,8 @@ struct PreviewVoiceRecorder: VoiceRecorder {
     func start() async throws {}
     func stop() async -> URL? { nil }
     func cancel() async {}
+}
+
+struct PreviewMemorySearcher: MemorySearcher {
+    func search(_ question: String) async throws -> [UUID] { [] }
 }

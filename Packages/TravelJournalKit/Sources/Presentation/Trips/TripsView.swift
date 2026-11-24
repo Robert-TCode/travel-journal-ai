@@ -1,4 +1,5 @@
 import DesignSystem
+import Foundation
 import SwiftUI
 
 struct TripsView: View {
@@ -41,8 +42,17 @@ struct TripsView: View {
                         .font(.dsDisplay)
                         .foregroundStyle(Palette.ink)
                         .padding(.bottom, Spacing.xs)
-                    ForEach(viewModel.summaries) { summary in
-                        TripCard(summary: summary, sky: viewModel.skies[summary.id] ?? .unknown)
+                    SearchField(
+                        text: $viewModel.query,
+                        onSubmit: { Task { await viewModel.submitSearch() } },
+                        onClear: viewModel.clearSearch
+                    )
+                    if viewModel.search == .idle {
+                        ForEach(viewModel.summaries) { summary in
+                            TripCard(summary: summary, sky: viewModel.skies[summary.id] ?? .unknown)
+                        }
+                    } else {
+                        SearchResultsView(state: viewModel.search, photoURL: viewModel.photoURL(for:))
                     }
                 }
                 .padding(Spacing.l)

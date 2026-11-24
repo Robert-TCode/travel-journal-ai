@@ -77,7 +77,7 @@ final class PhotoEvalRunner {
             progress = "\(name)\n\(number + 1)/\(cases.count): \(evalCase.photo)\nthermal: \(thermal.label)"
             let entry = Entry(tripID: UUID(), text: evalCase.note ?? "", photoNames: [evalCase.photo])
             do {
-                let (index, measurement) = try await Self.withTimeout(.seconds(60)) {
+                let (index, measurement) = try await withTimeout(.seconds(60)) {
                     try await indexer.measuredIndex(entry)
                 }
                 let tags = index.tags.map { $0.lowercased() }
@@ -110,48 +110,12 @@ final class PhotoEvalRunner {
         return (section, summary)
     }
 
-    struct Timeout: Error, CustomStringConvertible {
-        var description: String { "timeout after 60 s" }
-    }
-
-    /// One stuck model call (a tool that never returns, say) would otherwise hold up the whole report.
-    private static func withTimeout<Value: Sendable>(
-        _ limit: Duration,
-        _ operation: @escaping @Sendable () async throws -> Value
-    ) async throws -> Value {
-        try await withThrowingTaskGroup(of: Value.self) { group in
-            group.addTask { try await operation() }
-            group.addTask {
-                try await Task.sleep(for: limit)
-                throw Timeout()
-            }
-            defer { group.cancelAll() }
-            return try await group.next()!
-        }
-    }
-
-    /// Also written on failure, so the script waiting for report.md never hangs.
     private func finish(_ message: String) {
-        try? FileManager.default.createDirectory(at: Self.folder, withIntermediateDirectories: true)
         if !FileManager.default.fileExists(atPath: Self.folder.appending(path: "report.md").path()) {
-            try? message.write(to: Self.folder.appending(path: "report.md"), atomically: true, encoding: .utf8)
+            writeReport(message, in: Self.folder)
         }
         progress = message
         isFinished = true
-    }
-}
-
-extension ProcessInfo.ThermalState: @retroactive Comparable {
-    public static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
-
-    var label: String {
-        switch self {
-        case .nominal: "nominal"
-        case .fair: "fair"
-        case .serious: "serious"
-        case .critical: "critical"
-        @unknown default: "unknown"
-        }
     }
 }
 

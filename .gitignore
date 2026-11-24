@@ -31,3 +31,6 @@ Evaluation/Photos/
 
 # Personal signing: team ID and bundle ID
 Config/Signing.local.xcconfig
+
+# Search eval reports list personal entries
+Evaluation/SearchEval/report-*.md
