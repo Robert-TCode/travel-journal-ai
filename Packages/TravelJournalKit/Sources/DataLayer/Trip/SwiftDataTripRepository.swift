@@ -44,6 +44,12 @@ public actor SwiftDataTripRepository: TripRepository {
         return try context.fetch(descriptor).first?.trip
     }
 
+    public func trip(withID id: UUID) throws -> Trip? {
+        var descriptor = FetchDescriptor<TripRecord>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first?.trip
+    }
+
     private func allTrips() throws -> [Trip] {
         try context.fetch(FetchDescriptor<TripRecord>(sortBy: [SortDescriptor(\.startedAt, order: .reverse)])).map(\.trip)
     }

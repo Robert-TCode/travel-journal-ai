@@ -8,6 +8,7 @@ import Presentation
 struct TravelJournalApp: App {
     private let dependencies: AppDependencies
     private let indexingCoordinator: IndexingCoordinator
+    private let searchableEntries: SearchIndexingEntryRepository
 
     init() {
         let store: JournalStore
@@ -19,16 +20,22 @@ struct TravelJournalApp: App {
         let context = DeviceEntryContextProvider()
         let media = FileMediaStore()
         let liveIndexing = LiveIndexing()
+        let entries = SearchIndexingEntryRepository(
+            base: store.entries,
+            trips: store.trips,
+            searchIndex: SpotlightEntryIndex(media: media)
+        )
+        searchableEntries = entries
         indexingCoordinator = IndexingCoordinator(
             contextProvider: context,
             transcriber: SpeechTranscriberService(media: media),
             indexer: FoundationModelsEntryIndexer(media: media),
-            repository: store.entries,
+            repository: entries,
             live: liveIndexing
         )
         dependencies = AppDependencies(
             availability: SystemModelAvailabilityService(),
-            entries: store.entries,
+            entries: entries,
             trips: store.trips,
             tripLifecycle: TripLifecycle(repository: store.trips),
             indexingQueue: indexingCoordinator,
@@ -56,5 +63,6 @@ struct TravelJournalApp: App {
     private var app: some View {
         RootView(dependencies: dependencies)
             .task { await indexingCoordinator.resumePendingEntries() }
+            .task(priority: .background) { await searchableEntries.reindexAll() }
     }
 }

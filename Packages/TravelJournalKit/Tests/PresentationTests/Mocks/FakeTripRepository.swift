@@ -37,4 +37,8 @@ final class FakeTripRepository: TripRepository {
         for _ in 0..<5 { await Task.yield() }
         return trips.first(where: \.isOngoing)
     }
+
+    func trip(withID id: UUID) -> Trip? {
+        trips.first { $0.id == id }
+    }
 }

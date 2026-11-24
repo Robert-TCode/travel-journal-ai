@@ -53,8 +53,13 @@ final class SpyEntryRepository: EntryRepository {
         AsyncStream { $0.finish() }
     }
 
+    /// The stored entries once, newest first, like a store's first delivery.
     func allEntryUpdates() -> AsyncStream<[Entry]> {
-        AsyncStream { $0.finish() }
+        let snapshot = entries.sorted { $0.createdAt > $1.createdAt }
+        return AsyncStream {
+            $0.yield(snapshot)
+            $0.finish()
+        }
     }
 
     func pendingEntries() -> [Entry] {
@@ -83,5 +88,21 @@ struct StubTranscriber: Transcriber {
 
     func transcribe(audioNamed name: String) async throws -> String {
         try result.get()
+    }
+}
+
+final class SpySearchIndex: EntrySearchIndex {
+    private let calls = Mutex<[[SearchableEntry]]>([])
+    private let error: (any Error)?
+
+    init(failingWith error: (any Error)? = nil) {
+        self.error = error
+    }
+
+    var batches: [[SearchableEntry]] { calls.withLock { $0 } }
+
+    func index(_ entries: [SearchableEntry]) async throws {
+        calls.withLock { $0.append(entries) }
+        if let error { throw error }
     }
 }
