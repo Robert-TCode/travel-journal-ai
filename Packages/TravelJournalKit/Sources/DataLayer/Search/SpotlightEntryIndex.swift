@@ -36,7 +36,8 @@ public struct SpotlightEntryIndex: EntrySearchIndex {
         attributes.title = Self.title(for: entry)
         attributes.contentDescription = words.first
         attributes.textContent = words.joined(separator: "\n")
-        attributes.keywords = entry.tags + [entry.landmark].compactMap { $0 }
+        attributes.keywords = entry.tags + entry.categories.map(\.rawValue) + Self.momentWords(for: entry)
+            + [entry.landmark].compactMap { $0 }
         attributes.containerTitle = searchable.tripName
         attributes.containerIdentifier = entry.tripID.uuidString
         attributes.namedLocation = [entry.landmark, entry.placeName].compactMap { $0 }.joined(separator: ", ")
@@ -53,6 +54,31 @@ public struct SpotlightEntryIndex: EntrySearchIndex {
             domainIdentifier: entry.tripID.uuidString,
             attributeSet: attributes
         )
+    }
+
+    /// Weather and time of day come from the device, not the model, so they are reliable and free to index:
+    /// "rainy day" or "sunset" can match without the model ever tagging them.
+    static func momentWords(for entry: Entry) -> [String] {
+        let phase: [String] = switch entry.dayPhase {
+        case .dawn: ["sunrise"]
+        case .day: []
+        case .goldenHour: ["golden hour", "sunset"]
+        case .dusk: ["sunset"]
+        case .night: ["night"]
+        case nil: []
+        }
+        // Both the adjective and the noun: the model searches "rain" for "rainy day".
+        let weather: [String] = switch entry.weather {
+        case .clear: entry.dayPhase == .night ? ["clear"] : ["clear", "sunny"]
+        case .cloudy: ["cloudy", "cloud"]
+        case .rainy: ["rainy", "rain"]
+        case .snowy: ["snowy", "snow"]
+        case .windy: ["windy", "wind"]
+        case .foggy: ["foggy", "fog"]
+        case .stormy: ["stormy", "storm"]
+        case nil: []
+        }
+        return weather + phase
     }
 
     /// The first line of the note, so a result reads like the memory itself.

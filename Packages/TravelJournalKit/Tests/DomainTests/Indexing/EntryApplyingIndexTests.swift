@@ -75,4 +75,11 @@ struct EntryApplyingIndexTests {
     @Test func neverTouchesTheText() {
         #expect(entry.applying(EntryIndex(tags: ["x"], mood: .happy)).text == entry.text)
     }
+
+    @Test func storesTheCategoriesForSearch() {
+        let indexed = entry.applying(EntryIndex(tags: ["pineapple juice"], mood: nil, categories: [.drink]))
+
+        #expect(indexed.categories == [.drink])
+        #expect(indexed.tags == ["pineapple juice"])
+    }
 }

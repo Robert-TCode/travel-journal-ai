@@ -50,6 +50,7 @@ struct SwiftDataEntryRepositoryTests {
             nearbyPlaces: ["Owakudani", "Hakone Ropeway"],
             landmark: "Owakudani",
             tags: ["ice cream", "happy"],
+            categories: [.dessert, .view],
             indexingStatus: .done
         )
         try await sut.save(entry)

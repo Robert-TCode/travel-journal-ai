@@ -78,7 +78,7 @@ final class SearchEvalRunner {
         }
 
         let journal = stored.map { entry in
-            "| \(titles[entry.id] ?? "") | \(tripNames[entry.tripID] ?? "") | \(entry.tags.joined(separator: ", ")) | \(entry.indexingStatus.rawValue) |"
+            "| \(titles[entry.id] ?? "") | \(tripNames[entry.tripID] ?? "") | \(entry.tags.joined(separator: ", ")) | \(entry.categories.map(\.rawValue).joined(separator: ", ")) | \(entry.indexingStatus.rawValue) |"
         }
         let report = """
             # Search eval
@@ -90,8 +90,8 @@ final class SearchEvalRunner {
 
             ## Journal
 
-            | Entry | Trip | Tags | Indexing |
-            |---|---|---|---|
+            | Entry | Trip | Tags | Categories | Indexing |
+            |---|---|---|---|---|
             \(journal.joined(separator: "\n"))
             """
         writeReport(report, in: Self.folder)

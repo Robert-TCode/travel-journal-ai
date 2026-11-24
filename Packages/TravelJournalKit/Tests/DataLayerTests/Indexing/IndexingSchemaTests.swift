@@ -17,16 +17,18 @@ struct IndexingSchemaTests {
         #expect(json.contains("\"Owakudani\""))
         #expect(json.contains("\"Hakone Ropeway\""))
         #expect(json.contains("clearly about"))
+        #expect(json.contains("\"landmark\":"))
     }
 
     @Test func withoutNearbyPlacesThereIsNoLandmarkToChoose() throws {
-        #expect(try !json(nearbyPlaces: []).contains("landmark"))
+        // "landmark" is also a category, so look for the property itself.
+        #expect(try !json(nearbyPlaces: []).contains("\"landmark\":"))
     }
 
     @Test func withoutANoteThereIsNoMoodToChoose() throws {
         let json = String(decoding: try JSONEncoder().encode(try IndexingSchema.schema(nearbyPlaces: [], asksForMood: false)), as: UTF8.self)
 
-        #expect(!json.contains("mood"))
+        #expect(!json.contains("\"mood\":"))
         #expect(json.contains("tags"))
     }
 
@@ -43,6 +45,7 @@ struct IndexingSchemaTests {
         #expect(json.contains("Always in English"))
         #expect(json.contains("a wrong name is worse than a plain word"))
         #expect(json.contains("use none"))
+        #expect(json.contains("\"mood\":"))
         #expect(json.contains("nostalgic"))
     }
 
@@ -71,6 +74,21 @@ struct IndexingSchemaTests {
         let content = GeneratedContent(properties: ["tags": ["bus"], "mood": GeneratedMood.none])
 
         #expect(try IndexingSchema.index(from: content).landmark == nil)
+    }
+
+    @Test func offersOnlyTheFixedCategories() throws {
+        let json = try json(nearbyPlaces: [])
+
+        for category in EntryCategory.allCases {
+            #expect(json.contains("\"\(category.rawValue)\""))
+        }
+        #expect(json.contains("for search later"))
+    }
+
+    @Test func readsTheCategories() throws {
+        let content = GeneratedContent(properties: ["tags": ["pineapple juice"], "categories": ["drink", "not-a-category"]])
+
+        #expect(try IndexingSchema.index(from: content).categories == [.drink])
     }
 
     @Test func aSnapshotBeforeAnyTagHasNoPartialIndex() {

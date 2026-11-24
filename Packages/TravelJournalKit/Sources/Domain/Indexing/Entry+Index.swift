@@ -28,6 +28,7 @@ extension Entry {
         if let landmark = index.landmark, nearbyPlaces.contains(landmark) {
             updated.landmark = landmark
         }
+        updated.categories = index.categories
         return updated
     }
 

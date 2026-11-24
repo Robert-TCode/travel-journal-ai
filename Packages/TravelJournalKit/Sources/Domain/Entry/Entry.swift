@@ -25,6 +25,8 @@ public struct Entry: Sendable, Equatable, Identifiable {
 
     // The mood is stored here as one of the tags.
     public var tags: [String]
+    /// Set by indexing, for search only.
+    public var categories: [EntryCategory]
     public var indexingStatus: IndexingStatus
     /// Set only when `indexingStatus` is `.failed`.
     public var indexingFailure: IndexingFailure?
@@ -44,6 +46,7 @@ public struct Entry: Sendable, Equatable, Identifiable {
         nearbyPlaces: [String] = [],
         landmark: String? = nil,
         tags: [String] = [],
+        categories: [EntryCategory] = [],
         indexingStatus: IndexingStatus = .pending,
         indexingFailure: IndexingFailure? = nil
     ) {
@@ -61,6 +64,7 @@ public struct Entry: Sendable, Equatable, Identifiable {
         self.nearbyPlaces = nearbyPlaces
         self.landmark = landmark
         self.tags = tags
+        self.categories = categories
         self.indexingStatus = indexingStatus
         self.indexingFailure = indexingFailure
     }

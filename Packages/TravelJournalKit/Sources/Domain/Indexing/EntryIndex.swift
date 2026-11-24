@@ -4,10 +4,12 @@ public struct EntryIndex: Sendable, Equatable {
     public let tags: [String]
     public let mood: Mood?
     public let landmark: String?
+    public let categories: [EntryCategory]
 
-    public init(tags: [String], mood: Mood?, landmark: String? = nil) {
+    public init(tags: [String], mood: Mood?, landmark: String? = nil, categories: [EntryCategory] = []) {
         self.tags = tags
         self.mood = mood
         self.landmark = landmark
+        self.categories = categories
     }
 }

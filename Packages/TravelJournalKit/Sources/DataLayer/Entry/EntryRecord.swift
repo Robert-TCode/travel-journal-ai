@@ -20,6 +20,8 @@ final class EntryRecord {
     var nearbyPlaces: [String] = []
     var landmark: String?
     var tags: [String]
+    /// Optional so stores written before categories existed still open.
+    var categories: [String]?
     var indexingStatus: String
     var indexingFailure: String?
 
@@ -46,6 +48,7 @@ final class EntryRecord {
         nearbyPlaces = entry.nearbyPlaces
         landmark = entry.landmark
         tags = entry.tags
+        categories = entry.categories.map(\.rawValue)
         indexingStatus = entry.indexingStatus.rawValue
         indexingFailure = entry.indexingFailure?.rawValue
     }
@@ -68,6 +71,7 @@ final class EntryRecord {
             nearbyPlaces: nearbyPlaces,
             landmark: landmark,
             tags: tags,
+            categories: (categories ?? []).compactMap(EntryCategory.init(rawValue:)),
             indexingStatus: Entry.IndexingStatus(rawValue: indexingStatus) ?? .pending,
             indexingFailure: indexingFailure.flatMap(IndexingFailure.init(rawValue:))
         )
