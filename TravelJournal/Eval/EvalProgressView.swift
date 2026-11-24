@@ -1,8 +1,9 @@
 #if DEBUG
 import SwiftUI
 
-struct SearchEvalView: View {
-    @State var runner: SearchEvalRunner
+/// Shows a running eval's progress; the runner writes its own report.
+struct EvalProgressView<Runner: EvalRunner>: View {
+    @State var runner: Runner
 
     var body: some View {
         VStack(spacing: 16) {

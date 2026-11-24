@@ -34,3 +34,4 @@ Config/Signing.local.xcconfig
 
 # Search eval reports list personal entries
 Evaluation/SearchEval/report-*.md
+Evaluation/StoryEval/report-*.md

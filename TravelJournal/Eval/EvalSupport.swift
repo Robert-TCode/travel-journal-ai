@@ -1,5 +1,14 @@
 #if DEBUG
 import Foundation
+import Observation
+
+/// A Debug-only run on the device that writes a report the eval scripts copy back.
+@MainActor
+protocol EvalRunner: AnyObject, Observable {
+    var progress: String { get }
+    var isFinished: Bool { get }
+    func run() async
+}
 
 struct Timeout: Error, CustomStringConvertible {
     let limit: Duration

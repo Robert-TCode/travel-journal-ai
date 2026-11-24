@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Trip: Sendable, Equatable, Identifiable {
+public struct Trip: Sendable, Hashable, Identifiable {
     public let id: UUID
     public var name: String
     public let startedAt: Date

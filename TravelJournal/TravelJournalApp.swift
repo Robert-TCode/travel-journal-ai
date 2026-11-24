@@ -45,7 +45,8 @@ struct TravelJournalApp: App {
             media: media,
             recorder: AudioFileVoiceRecorder(),
             liveIndexing: liveIndexing,
-            searcher: FoundationModelsMemorySearcher()
+            searcher: FoundationModelsMemorySearcher(),
+            stories: TripStoryService(writer: FoundationModelsTripStoryWriter(), repository: store.stories)
         )
     }
 
@@ -53,9 +54,11 @@ struct TravelJournalApp: App {
         WindowGroup {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-photoEval") {
-                PhotoEvalView()
+                EvalProgressView(runner: PhotoEvalRunner())
             } else if ProcessInfo.processInfo.arguments.contains("-searchEval") {
-                SearchEvalView(runner: SearchEvalRunner(entries: searchableEntries, trips: trips))
+                EvalProgressView(runner: SearchEvalRunner(entries: searchableEntries, trips: trips))
+            } else if ProcessInfo.processInfo.arguments.contains("-storyEval") {
+                EvalProgressView(runner: StoryEvalRunner(entries: searchableEntries, trips: trips))
             } else {
                 app
             }

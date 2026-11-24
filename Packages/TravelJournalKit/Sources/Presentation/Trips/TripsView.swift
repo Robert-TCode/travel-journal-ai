@@ -1,12 +1,15 @@
 import DesignSystem
+import Domain
 import Foundation
 import SwiftUI
 
 struct TripsView: View {
     @State private var viewModel: TripsViewModel
+    private let dependencies: AppDependencies
     private let onStartTrip: () -> Void
 
     init(dependencies: AppDependencies, onStartTrip: @escaping () -> Void) {
+        self.dependencies = dependencies
         _viewModel = State(initialValue: TripsViewModel(dependencies: dependencies))
         self.onStartTrip = onStartTrip
     }
@@ -17,6 +20,9 @@ struct TripsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .dsScreenBackground()
                 .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(for: Trip.self) { trip in
+                    TripDetailView(trip: trip, dependencies: dependencies)
+                }
         }
         .task { await viewModel.observeTrips() }
         .task { await viewModel.observeEntries() }
@@ -49,7 +55,10 @@ struct TripsView: View {
                     )
                     if viewModel.search == .idle {
                         ForEach(viewModel.summaries) { summary in
-                            TripCard(summary: summary, sky: viewModel.skies[summary.id] ?? .unknown)
+                            NavigationLink(value: summary.trip) {
+                                TripCard(summary: summary, sky: viewModel.skies[summary.id] ?? .unknown)
+                            }
+                            .buttonStyle(.plain)
                         }
                     } else {
                         SearchResultsView(state: viewModel.search, photoURL: viewModel.photoURL(for:))

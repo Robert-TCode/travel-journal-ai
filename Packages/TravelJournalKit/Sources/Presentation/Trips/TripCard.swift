@@ -19,7 +19,7 @@ struct TripCard: View {
                         SkyChip("Now", sky: sky)
                     }
                 }
-                Text("\(dateRange) · \(summary.memoryCount) \(summary.memoryCount == 1 ? "memory" : "memories")")
+                Text("\(trip.dateRangeText) · \(summary.memoryCount) \(summary.memoryCount == 1 ? "memory" : "memories")")
                     .font(.dsMeta)
                     .opacity(0.85)
                 if !summary.topTags.isEmpty {
@@ -30,12 +30,6 @@ struct TripCard: View {
                 }
             }
         }
-    }
-
-    private var dateRange: String {
-        let start = trip.startedAt.formatted(.dateTime.month(.abbreviated).day())
-        guard let end = trip.endedAt else { return "Since \(start)" }
-        return "\(start) – \(end.formatted(.dateTime.month(.abbreviated).day().year()))"
     }
 }
 

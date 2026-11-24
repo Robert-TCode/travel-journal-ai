@@ -23,7 +23,8 @@ struct TripsSearchTests {
             media: MockMediaStore(),
             recorder: MockVoiceRecorder(),
             liveIndexing: LiveIndexing(),
-            searcher: searcher
+            searcher: searcher,
+            stories: .stub()
         ))
     }
 

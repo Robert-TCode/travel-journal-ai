@@ -10,7 +10,7 @@ import Observation
 /// and writes report.md there. On the device because the search tool's model assets aren't in the simulator.
 /// The report lists the journal's entries so the answers can be judged: it is personal and stays out of the repo.
 @MainActor @Observable
-final class SearchEvalRunner {
+final class SearchEvalRunner: EvalRunner {
     private(set) var progress = "Waiting"
     private(set) var isFinished = false
 

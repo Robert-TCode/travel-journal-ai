@@ -18,7 +18,8 @@ extension AppDependencies {
             media: PreviewMediaStore(),
             recorder: PreviewVoiceRecorder(),
             liveIndexing: LiveIndexing(),
-            searcher: PreviewMemorySearcher()
+            searcher: PreviewMemorySearcher(),
+            stories: TripStoryService(writer: PreviewStoryWriter(), repository: PreviewStoryRepository())
         )
     }
 }
@@ -53,4 +54,25 @@ struct PreviewVoiceRecorder: VoiceRecorder {
 
 struct PreviewMemorySearcher: MemorySearcher {
     func search(_ question: String) async throws -> [UUID] { [] }
+}
+
+struct PreviewStoryWriter: TripStoryWriter {
+    var writer: TripStory.Writer { .onDevice }
+
+    func write(trip: Trip, entries: [Entry]) async throws -> TripStory.Draft {
+        try await Task.sleep(for: .seconds(1))
+        return TripStory.Draft(
+            title: "Steam, ramen and sore feet",
+            text: "You started at Owakudani, where the ice cream was black and the air smelled of sulphur. "
+                + "By night you had walked twenty thousand steps, and the best ramen of your life made up for every one.",
+            highlights: entries.prefix(2).map { TripStory.Highlight(entryID: $0.id, caption: "Where the trip began.") }
+        )
+    }
+}
+
+actor PreviewStoryRepository: TripStoryRepository {
+    private var stories: [UUID: TripStory] = [:]
+
+    func story(forTrip tripID: UUID) -> TripStory? { stories[tripID] }
+    func save(_ story: TripStory) { stories[story.tripID] = story }
 }

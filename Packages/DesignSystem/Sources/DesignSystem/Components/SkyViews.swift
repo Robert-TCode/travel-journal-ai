@@ -41,12 +41,21 @@ public struct SkyHeader<Trailing: View>: View {
     let title: String
     let subtitle: String?
     let sky: Sky
+    /// Extra room above the title, for a screen that draws the header under its navigation bar.
+    let topInset: CGFloat
     let trailing: Trailing
 
-    public init(title: String, subtitle: String? = nil, sky: Sky, @ViewBuilder trailing: () -> Trailing = { EmptyView() }) {
+    public init(
+        title: String,
+        subtitle: String? = nil,
+        sky: Sky,
+        topInset: CGFloat = 0,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) {
         self.title = title
         self.subtitle = subtitle
         self.sky = sky
+        self.topInset = topInset
         self.trailing = trailing()
     }
 
@@ -66,7 +75,7 @@ public struct SkyHeader<Trailing: View>: View {
         }
         .foregroundStyle(sky.foreground)
         .padding(.horizontal, Spacing.l)
-        .padding(.top, Spacing.m)
+        .padding(.top, Spacing.m + topInset)
         .padding(.bottom, Spacing.xl)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(sky.gradient.ignoresSafeArea(edges: .top))

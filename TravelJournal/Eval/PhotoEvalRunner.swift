@@ -7,7 +7,7 @@ import Observation
 /// Runs the real indexer on the photos in Documents/PhotoEval and writes report.md next to them.
 /// Lives in the app because image input needs iOS 27, and the model doesn't run under xctest on the simulator.
 @MainActor @Observable
-final class PhotoEvalRunner {
+final class PhotoEvalRunner: EvalRunner {
     struct EvalCase: Decodable {
         let photo: String
         let note: String?

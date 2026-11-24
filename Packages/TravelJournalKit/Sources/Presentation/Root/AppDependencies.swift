@@ -12,6 +12,7 @@ public struct AppDependencies: Sendable {
     let recorder: any VoiceRecorder
     let liveIndexing: LiveIndexing
     let searcher: any MemorySearcher
+    let stories: TripStoryService
 
     public init(
         availability: any AIModelAvailabilityService,
@@ -23,7 +24,8 @@ public struct AppDependencies: Sendable {
         media: any MediaStore,
         recorder: any VoiceRecorder,
         liveIndexing: LiveIndexing,
-        searcher: any MemorySearcher
+        searcher: any MemorySearcher,
+        stories: TripStoryService
     ) {
         self.availability = availability
         self.entries = entries
@@ -35,5 +37,6 @@ public struct AppDependencies: Sendable {
         self.recorder = recorder
         self.liveIndexing = liveIndexing
         self.searcher = searcher
+        self.stories = stories
     }
 }
